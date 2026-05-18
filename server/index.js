@@ -19,7 +19,7 @@ app.use('/api/foods', foodsRouter)
 
 // 生产环境：serve 前端静态文件
 if (isProd) {
-  const clientDist = path.join(__dirname, '..', 'client', 'dist')
+  const clientDist = path.join(__dirname, 'client', 'dist')
   app.use(express.static(clientDist))
   // SPA fallback：所有未匹配的 API 路由返回 index.html
   app.use((_req, res, next) => {
