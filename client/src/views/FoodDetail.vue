@@ -7,14 +7,20 @@ const route = useRoute()
 const router = useRouter()
 const food = ref(null)
 const error = ref('')
+const loading = ref(true)
 const qrKey = ref(0)
 
 async function loadFood() {
+  loading.value = true
+  error.value = ''
+  food.value = null
   try {
     food.value = await foods.getById(route.params.id)
     qrKey.value = Date.now()
   } catch (e) {
-    error.value = e.message
+    error.value = e.message || '加载失败'
+  } finally {
+    loading.value = false
   }
 }
 
@@ -59,7 +65,8 @@ function daysColor(f) {
     </header>
 
     <main class="max-w-6xl mx-auto px-4 sm:px-6 py-6">
-      <div v-if="error" class="text-center text-red-400 py-20">{{ error }}</div>
+      <div v-if="loading" class="text-center text-gray-300 py-20">加载中...</div>
+      <div v-else-if="error" class="text-center text-red-400 py-20">{{ error }}</div>
 
       <!-- PC端：左右分栏 -->
       <div v-else-if="food" class="hidden md:grid md:grid-cols-[1fr_280px] md:gap-8">
