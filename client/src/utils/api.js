@@ -19,3 +19,7 @@ export const foods = {
   update: (id, data) => request(`/foods/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (id) => request(`/foods/${id}`, { method: 'DELETE' })
 }
+
+export const barcode = {
+  lookup: (code) => request(`/barcode/${code}`)
+}

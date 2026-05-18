@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [1.1.0-alpha] - 2026-05-18
+
+### Added
+
+- Barcode scanning — scan product barcodes to auto-fill food names (apibyte.cn API)
+- Scan guide line — green gradient line in scan frame to help align barcodes
+
+### Improved
+
+- Scan UX — barcode scanner integrated into add-food form with icon next to name input
+- Detail page layout — QR code tip text split into two lines for better readability
+
+### Tech
+
+- New `/api/barcode/:code` route proxying barcode lookup API
+- dotenv for `.env` configuration
+- html5-qrcode for camera-based barcode scanning
+
+---
+
 ## [1.0.0] - 2026-05-18
 
 ### Added

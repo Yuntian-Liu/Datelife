@@ -1,8 +1,10 @@
+require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') })
 const express = require('express')
 const cors = require('cors')
 const path = require('path')
 const { getDb } = require('./lib/db')
 const foodsRouter = require('./routes/foods')
+const barcodeRouter = require('./routes/barcode')
 
 const app = express()
 const PORT = process.env.PORT || 3000
@@ -16,6 +18,7 @@ getDb()
 
 // 路由
 app.use('/api/foods', foodsRouter)
+app.use('/api/barcode', barcodeRouter)
 
 // 生产环境：serve 前端静态文件
 if (isProd) {

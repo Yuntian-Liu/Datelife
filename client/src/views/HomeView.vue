@@ -1,6 +1,7 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import { foods } from '../utils/api'
+import { ref, onMounted, nextTick } from 'vue'
+import { Html5Qrcode } from 'html5-qrcode'
+import { foods, barcode } from '../utils/api'
 
 const foodList = ref([])
 const loading = ref(true)
@@ -8,6 +9,11 @@ const showForm = ref(false)
 const editing = ref(null)
 const form = ref({ name: '', produce_date: '', shelf_life_days: '' })
 const errMsg = ref('')
+
+// 扫码相关
+const showScanner = ref(false)
+const scanStatus = ref('')
+let scanner = null
 
 onMounted(async () => {
   try {
@@ -60,6 +66,68 @@ async function submitForm() {
   }
 }
 
+async function startScan() {
+  showScanner.value = true
+  scanStatus.value = '正在启动摄像头...'
+  await nextTick()
+
+  try {
+    scanner = new Html5Qrcode('scanner-container')
+    await scanner.start(
+      { facingMode: 'environment' },
+      { fps: 10, qrbox: { width: 250, height: 150 } },
+      onScanSuccess,
+      () => {} // 忽略扫描失败
+    )
+    scanStatus.value = '请将条形码对准扫描框'
+  } catch (e) {
+    scanStatus.value = '无法启动摄像头：' + e.message
+    setTimeout(() => { showScanner.value = false }, 3000)
+  }
+}
+
+async function stopScan() {
+  if (scanner) {
+    try {
+      await scanner.stop()
+      scanner.clear()
+    } catch {}
+    scanner = null
+  }
+  showScanner.value = false
+  scanStatus.value = ''
+}
+
+async function onScanSuccess(decodedText) {
+  await stopScan()
+  await handleBarcode(decodedText)
+}
+
+async function handleBarcode(code) {
+  scanStatus.value = '正在查询商品信息...'
+  showScanner.value = false
+
+  try {
+    const result = await barcode.lookup(code)
+    if (result.found) {
+      // 自动填充表单
+      resetForm()
+      form.value.name = result.goods_name
+      showForm.value = true
+      scanStatus.value = ''
+    } else {
+      // 未找到商品，提示手动输入
+      resetForm()
+      showForm.value = true
+      scanStatus.value = '未找到商品信息，请手动输入名称'
+      setTimeout(() => { scanStatus.value = '' }, 3000)
+    }
+  } catch (e) {
+    scanStatus.value = '查询失败：' + e.message
+    setTimeout(() => { scanStatus.value = '' }, 3000)
+  }
+}
+
 async function remove(id) {
   if (!confirm('确定要删除这个食品吗？')) return
   await foods.delete(id)
@@ -104,8 +172,36 @@ function statusText(food) {
       <!-- 录入/编辑表单 -->
       <div v-if="showForm" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-6">
         <h2 class="text-lg font-semibold mb-4">{{ editing ? '编辑食品' : '添加食品' }}</h2>
+
+        <!-- 扫码状态提示 -->
+        <div v-if="scanStatus" class="mb-3 p-3 bg-blue-50 text-blue-700 rounded-xl text-sm">
+          {{ scanStatus }}
+        </div>
+
+        <!-- 扫码区域 -->
+        <div v-if="showScanner" class="mb-4">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm text-gray-500">扫描条形码</span>
+            <button @click="stopScan" class="text-gray-400 hover:text-gray-600 transition">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div id="scanner-container" class="w-full max-w-xs rounded-lg overflow-hidden relative"></div>
+        </div>
+
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <input v-model="form.name" placeholder="食品名称" class="border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-300 focus:border-transparent" />
+          <div class="relative">
+            <input v-model="form.name" placeholder="食品名称" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-green-300 focus:border-transparent" />
+            <button @click="startScan" type="button"
+              class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-green-600 transition"
+              title="扫码识别">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+              </svg>
+            </button>
+          </div>
           <input v-model="form.produce_date" type="date" class="border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-300 focus:border-transparent" />
           <input v-model="form.shelf_life_days" type="number" placeholder="保质期（天）" class="border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-300 focus:border-transparent" />
         </div>
@@ -114,7 +210,7 @@ function statusText(food) {
           <button @click="submitForm" class="bg-green-500 hover:bg-green-600 text-white px-5 py-2 rounded-xl text-sm transition">
             {{ editing ? '保存' : '添加' }}
           </button>
-          <button @click="showForm = false; resetForm()" class="text-gray-500 px-4 py-2 rounded-xl text-sm hover:bg-gray-50 transition">
+          <button @click="showForm = false; resetForm(); stopScan()" class="text-gray-500 px-4 py-2 rounded-xl text-sm hover:bg-gray-50 transition">
             取消
           </button>
         </div>
@@ -208,3 +304,23 @@ function statusText(food) {
     </main>
   </div>
 </template>
+
+<style scoped>
+#scanner-container {
+  position: relative;
+}
+
+#scanner-container::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 15%;
+  right: 15%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(74, 222, 128, 0.8), transparent);
+  transform: translateY(-50%);
+  pointer-events: none;
+  z-index: 10;
+  box-shadow: 0 0 8px rgba(74, 222, 128, 0.4);
+}
+</style>

@@ -117,7 +117,7 @@ function daysColor(f) {
             <img :key="qrKey" :src="`/api/foods/${food.id}/qrcode?t=${qrKey}`" alt="二维码" class="w-48 h-48 rounded-lg" />
           </div>
           <p class="text-xs text-gray-300 mt-3 text-center max-w-[200px]">
-            打印此标签贴在食品包装上，扫码即可查看详情
+            打印此标签贴在食品包装上，<br>扫码即可查看详情
           </p>
         </div>
       </div>
