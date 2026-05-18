@@ -15,9 +15,12 @@ async function loadFood() {
   error.value = ''
   food.value = null
   try {
-    food.value = await foods.getById(route.params.id)
+    const data = await foods.getById(route.params.id)
+    console.log('food data:', data)
+    food.value = data
     qrKey.value = Date.now()
   } catch (e) {
+    console.error('loadFood error:', e)
     error.value = e.message || '加载失败'
   } finally {
     loading.value = false
@@ -67,6 +70,7 @@ function daysColor(f) {
     <main class="max-w-6xl mx-auto px-4 sm:px-6 py-6">
       <div v-if="loading" class="text-center text-gray-300 py-20">加载中...</div>
       <div v-else-if="error" class="text-center text-red-400 py-20">{{ error }}</div>
+      <div v-else-if="!food" class="text-center text-gray-400 py-20">DEBUG: loading={{loading}} error={{error}} food={{food}}</div>
 
       <!-- PC端：左右分栏 -->
       <div v-else-if="food" class="hidden md:grid md:grid-cols-[1fr_280px] md:gap-8">
