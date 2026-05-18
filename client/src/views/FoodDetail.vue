@@ -73,7 +73,7 @@ function daysColor(f) {
       <div v-else-if="!food" class="text-center text-gray-400 py-20">DEBUG: loading={{loading}} error={{error}} food={{food}}</div>
 
       <!-- PC端：左右分栏 -->
-      <div v-else-if="food" class="hidden md:grid md:grid-cols-[1fr_280px] md:gap-8">
+      <div v-if="food" class="hidden md:grid md:grid-cols-[1fr_280px] md:gap-8">
         <!-- 左侧：食品信息 -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
           <div class="flex items-center justify-between mb-6">
@@ -123,7 +123,7 @@ function daysColor(f) {
       </div>
 
       <!-- 手机端：上下堆叠 -->
-      <div v-else-if="food" class="md:hidden space-y-4">
+      <div v-if="food" class="md:hidden space-y-4">
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
           <div class="flex items-center justify-between mb-4">
             <h1 class="text-lg font-bold text-gray-800">{{ food.name }}</h1>
