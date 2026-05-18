@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [1.2.1-alpha] - 2026-05-18
+
+### Improved
+
+- Mobile scan frame size — smaller scan box on mobile for better barcode/QR code alignment and focus
+
+---
+
 ## [1.2.0-alpha] - 2026-05-18
 
 ### Added

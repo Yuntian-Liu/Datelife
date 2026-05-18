@@ -82,9 +82,11 @@ async function startScanWithMode(mode) {
   scanStatus.value = '正在启动摄像头...'
   await nextTick()
 
+  // 根据屏幕宽度调整扫码框大小
+  const isMobile = window.innerWidth < 640
   const config = mode === 'barcode'
-    ? { fps: 10, qrbox: { width: 300, height: 100 } }
-    : { fps: 10, qrbox: { width: 250, height: 250 } }
+    ? { fps: 10, qrbox: { width: isMobile ? 250 : 300, height: isMobile ? 80 : 100 } }
+    : { fps: 10, qrbox: { width: isMobile ? 200 : 250, height: isMobile ? 200 : 250 } }
 
   try {
     scanner = new Html5Qrcode('scanner-container')
