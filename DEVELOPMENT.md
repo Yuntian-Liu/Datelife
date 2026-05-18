@@ -12,7 +12,8 @@
 
 | 层 | 选型 | 说明 |
 |---|---|---|
-| 前端 | Vue 3 + Vite | 首次使用 Vue，学习为主 |
+| 前端框架 | Vue 3 + Vite | 首次使用 Vue，学习为主 |
+| 样式方案 | Tailwind CSS | 原子化 CSS，自由度高，搭配 Vue 使用 |
 | 后端 | Node.js + Express | 熟悉的方案 |
 | 数据库 | SQLite (better-sqlite3) | 新尝试，替代 JSON 存储 |
 | 部署 | Zeabur | 熟悉的部署平台 |
@@ -43,6 +44,70 @@
 - [ ] 批量录入
 - [ ] 食品图片上传
 
+## 认证系统设计
+
+### 设计思路
+做成大家都能用的产品，需要完整的登录/注册系统。基于 MyScore 已成熟方案迁移优化。
+
+### 认证方式
+- **邮箱验证码登录** + **密码登录**（双模式）
+- Cloudflare Turnstile 人机验证（仅发送验证码时）
+- Resend API 发送 6 位数字验证码邮件
+
+### 与 MyScore 对比：简化了什么
+- 移除：邀请码机制、飞书绑定、内测标记
+- 注册流程：5步 → 3步（邮箱 → 验证码 → 昵称+密码）
+- 头像：注册时用默认值，后续可改
+- 个性签名：移至资料编辑页
+
+### 认证流程
+```
+输入邮箱 → 发送验证码(需Turnstile) → 输入验证码
+  ├─ 已有账号 → 登录成功，返回 token
+  └─ 新用户 → 填写昵称+密码 → 注册完成，返回 token
+```
+
+### 安全特性（从 MyScore 复用）
+- JWT：自研 HMAC-SHA256，30天有效期
+- 密码加密：scrypt + 16字节随机盐 + timingSafeEqual
+- 频率限制：IP+路径滑动窗口限流（发验证码3次/分钟）
+- 验证码安全：5分钟过期 + 最多5次尝试
+
+### API 路由
+
+| 方法 | 路径 | 认证 | Turnstile | 功能 |
+|---|---|---|---|---|
+| POST | `/api/auth/send-code` | 否 | 必须 | 发送验证码 |
+| POST | `/api/auth/login-code` | 否 | - | 验证码登录 |
+| POST | `/api/auth/login-password` | 否 | - | 密码登录 |
+| POST | `/api/auth/register` | 否 | - | 注册 |
+| GET | `/api/auth/profile` | Bearer | - | 获取/更新用户资料 |
+| PUT | `/api/auth/profile` | Bearer | - | 更新用户资料 |
+
+### users 表
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| id | INTEGER PRIMARY KEY AUTOINCREMENT | 自增主键 |
+| uid | INTEGER UNIQUE | 公开 UID，从100000起 |
+| email | TEXT UNIQUE | 登录邮箱 |
+| nickname | TEXT | 昵称 |
+| avatar_seed | TEXT | DiceBear 头像种子 |
+| bio | TEXT | 个性签名 |
+| password_hash | TEXT | scrypt 哈希值 |
+| salt | TEXT | 随机盐 |
+| is_admin | INTEGER | 管理员标记 |
+| created_at / updated_at | TEXT | 时间戳 |
+
+### verification_codes 表
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| email | TEXT PRIMARY KEY | 邮箱 |
+| code | TEXT | 6位验证码 |
+| expires_at | TEXT | 过期时间(5分钟) |
+| attempts | INTEGER | 尝试次数(最多5次) |
+
 ## 数据库设计
 
 ### foods 表
@@ -50,6 +115,7 @@
 | 字段 | 类型 | 说明 |
 |---|---|---|
 | id | INTEGER PRIMARY KEY | 自增主键 |
+| user_id | INTEGER | 所属用户（外键关联 users.id） |
 | name | TEXT NOT NULL | 食品名称 |
 | barcode | TEXT | 条形码（可选） |
 | produce_date | TEXT NOT NULL | 生产日期 YYYY-MM-DD |
@@ -63,9 +129,29 @@
 
 ```
 Datelife/
-├── client/          # Vue 3 前端
-├── server/          # Express 后端
-├── DEVELOPMENT.md   # 本文档
+├── client/                      # Vue 3 前端
+│   ├── src/
+│   │   ├── main.js
+│   │   ├── App.vue
+│   │   ├── router/index.js     # 路由配置
+│   │   ├── stores/auth.js      # Pinia 认证 store
+│   │   ├── components/
+│   │   │   ├── LoginModal.vue  # 登录/注册弹窗
+│   │   │   └── ...
+│   │   ├── views/              # 页面组件
+│   │   └── utils/api.js        # API 封装
+│
+├── server/                      # Express 后端
+│   ├── index.js                # 入口
+│   ├── middleware/             # auth, rateLimit, turnstile
+│   ├── routes/auth.js          # 认证路由
+│   ├── routes/foods.js         # 食品路由
+│   └── lib/
+│       ├── db.js               # SQLite 操作
+│       ├── auth.js             # JWT/邮件/登录逻辑
+│       └── email.js            # Resend 邮件
+│
+├── DEVELOPMENT.md              # 开发文档（本文档）
 └── README.md
 ```
 
@@ -73,5 +159,11 @@ Datelife/
 
 ### 2026-05-18
 - 项目立项，确定技术栈和功能规划
-- 技术栈：Vue 3 + Vite + Express + SQLite
+- 技术栈：Vue 3 + Vite + Tailwind CSS + Express + SQLite(better-sqlite3)
+- 样式方案确定：Tailwind CSS（非 UI 组件库，自由度更高）
+- 前端设计流程：先出页面原型 → 确认风格 → 再动手写
 - 核心需求明确：食品录入、状态管理、二维码、条形码
+- GitHub 仓库已创建：https://github.com/Yuntian-Liu/Datelife
+- 认证系统方案确定：基于 MyScore 迁移优化，邮箱验证码+密码双模式
+- 认证系统设计写入开发文档（users表、verification_codes表、API路由、安全特性）
+- foods 表新增 user_id 字段关联用户
