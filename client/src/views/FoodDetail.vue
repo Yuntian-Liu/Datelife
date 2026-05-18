@@ -16,11 +16,9 @@ async function loadFood() {
   food.value = null
   try {
     const data = await foods.getById(route.params.id)
-    console.log('food data:', data)
     food.value = data
     qrKey.value = Date.now()
   } catch (e) {
-    console.error('loadFood error:', e)
     error.value = e.message || '加载失败'
   } finally {
     loading.value = false
@@ -39,13 +37,13 @@ function statusLabel(f) {
 function statusDot(f) {
   if (f.status === 'expired') return 'bg-red-500'
   if (f.status === 'expiring') return 'bg-yellow-500'
-  return 'bg-green-500'
+  return 'bg-primary-500'
 }
 
 function statusText(f) {
   if (f.status === 'expired') return 'text-red-600 bg-red-50'
   if (f.status === 'expiring') return 'text-yellow-600 bg-yellow-50'
-  return 'text-green-600 bg-green-50'
+  return 'text-primary-600 bg-primary-50'
 }
 
 function daysColor(f) {
@@ -53,14 +51,21 @@ function daysColor(f) {
   if (f.status === 'expiring') return 'text-yellow-600'
   return ''
 }
+
+function statusBorder(f) {
+  if (f.status === 'expired') return 'border-l-red-400'
+  if (f.status === 'expiring') return 'border-l-yellow-400'
+  return 'border-l-primary-400'
+}
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen bg-bg">
     <!-- 顶部导航 -->
-    <header class="bg-white border-b border-gray-100 sticky top-0 z-10">
+    <header class="bg-white/80 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-10">
       <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4">
-        <button @click="router.push('/')" class="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 transition">
+        <button @click="router.push('/')"
+          class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-primary-600 bg-gray-100 hover:bg-primary-50 px-4 py-2 rounded-full transition font-medium">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
           返回列表
         </button>
@@ -70,14 +75,13 @@ function daysColor(f) {
     <main class="max-w-6xl mx-auto px-4 sm:px-6 py-6">
       <div v-if="loading" class="text-center text-gray-300 py-20">加载中...</div>
       <div v-else-if="error" class="text-center text-red-400 py-20">{{ error }}</div>
-      <div v-else-if="!food" class="text-center text-gray-400 py-20">DEBUG: loading={{loading}} error={{error}} food={{food}}</div>
 
       <!-- PC端：左右分栏 -->
       <div v-if="food" class="hidden md:grid md:grid-cols-[1fr_280px] md:gap-8">
         <!-- 左侧：食品信息 -->
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+        <div class="bg-white rounded-2xl shadow-md border border-gray-100/80 border-l-4 p-8" :class="statusBorder(food)">
           <div class="flex items-center justify-between mb-6">
-            <h1 class="text-2xl font-bold text-gray-800">{{ food.name }}</h1>
+            <h1 class="text-2xl font-bold text-gray-800 font-brand">{{ food.name }}</h1>
             <span :class="statusText(food)" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-sm font-medium">
               <span :class="statusDot(food)" class="w-2 h-2 rounded-full"></span>
               {{ statusLabel(food) }}
@@ -113,7 +117,7 @@ function daysColor(f) {
         <!-- 右侧：二维码 -->
         <div class="flex flex-col items-center justify-start pt-4">
           <p class="text-xs text-gray-400 mb-4">扫码查看详情</p>
-          <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 inline-block">
+          <div class="bg-white p-4 rounded-2xl shadow-md border border-gray-100/80 inline-block">
             <img :key="qrKey" :src="`/api/foods/${food.id}/qrcode?t=${qrKey}`" alt="二维码" class="w-48 h-48 rounded-lg" />
           </div>
           <p class="text-xs text-gray-300 mt-3 text-center max-w-[200px]">
@@ -124,9 +128,9 @@ function daysColor(f) {
 
       <!-- 手机端：上下堆叠 -->
       <div v-if="food" class="md:hidden space-y-4">
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+        <div class="bg-white rounded-2xl shadow-md border border-gray-100/80 border-l-4 p-5" :class="statusBorder(food)">
           <div class="flex items-center justify-between mb-4">
-            <h1 class="text-lg font-bold text-gray-800">{{ food.name }}</h1>
+            <h1 class="text-lg font-bold text-gray-800 font-brand">{{ food.name }}</h1>
             <span :class="statusText(food)" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium">
               <span :class="statusDot(food)" class="w-1.5 h-1.5 rounded-full"></span>
               {{ statusLabel(food) }}
@@ -156,7 +160,7 @@ function daysColor(f) {
         </div>
 
         <!-- 二维码 -->
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col items-center">
+        <div class="bg-white rounded-2xl shadow-md border border-gray-100/80 p-5 flex flex-col items-center">
           <p class="text-xs text-gray-400 mb-3">扫码查看详情</p>
           <img :key="qrKey" :src="`/api/foods/${food.id}/qrcode?t=${qrKey}`" alt="二维码" class="w-40 h-40 rounded-xl" />
         </div>

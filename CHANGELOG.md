@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [1.3.0-alpha] - 2026-05-19
+
+### Added
+
+- Bottom capsule navigation bar (mobile only) with raised center "+" button
+- LXGW WenKai (霞鹜文楷) + Nunito custom fonts via Google Fonts
+- Tailwind v4 custom theme — grass-green primary color palette
+
+### Improved
+
+- Global visual upgrade: enhanced card shadows + status color stripes (left border)
+- Background color changed to soft green-gray (bg-bg)
+- Confirmation dialog — rounder corners and softer shadows matching new style
+- Back button on detail page — capsule shape with icon
+
+---
+
 ## [1.2.2-alpha] - 2026-05-18
 
 ### Fixed

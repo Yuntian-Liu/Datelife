@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, nextTick, inject, watch } from 'vue'
 import { Html5Qrcode } from 'html5-qrcode'
 import { foods, barcode } from '../utils/api'
 import { useConfirm } from '../composables/useConfirm'
@@ -12,6 +12,15 @@ const showForm = ref(false)
 const editing = ref(null)
 const form = ref({ name: '', produce_date: '', shelf_life_days: '' })
 const errMsg = ref('')
+
+// 从 App.vue 注入底部导航的添加触发
+const showAddForm = inject('showAddForm', ref(false))
+watch(showAddForm, (val) => {
+  if (val) {
+    openAdd()
+    showAddForm.value = false
+  }
+})
 
 // 扫码相关
 const showScanner = ref(false)
@@ -82,7 +91,6 @@ async function startScanWithMode(mode) {
   scanStatus.value = '正在启动摄像头...'
   await nextTick()
 
-  // 根据屏幕宽度调整扫码框大小
   const isMobile = window.innerWidth < 640
   const config = mode === 'barcode'
     ? { fps: 10, qrbox: { width: isMobile ? 250 : 300, height: isMobile ? 120 : 150 } }
@@ -94,7 +102,7 @@ async function startScanWithMode(mode) {
       { facingMode: 'environment' },
       config,
       onScanSuccess,
-      () => {} // 忽略扫描失败
+      () => {}
     )
     scanStatus.value = mode === 'barcode' ? '请将条形码对准扫描框' : '请将二维码对准扫描框'
   } catch (e) {
@@ -118,33 +126,24 @@ async function stopScan() {
 
 async function onScanSuccess(decodedText) {
   await stopScan()
-
-  // 判断是 URL（二维码）还是数字（条形码）
   if (decodedText.includes('/f/')) {
-    // 二维码：解析食品 ID 并查询名称
     await handleQrcode(decodedText)
   } else {
-    // 条形码：调 API 查询商品
     await handleBarcode(decodedText)
   }
 }
 
 async function handleQrcode(url) {
   scanStatus.value = '正在查询食品信息...'
-
   try {
-    // 从 URL 中提取食品 ID
     const match = url.match(/\/f\/(\d+)/)
     if (!match) {
       scanStatus.value = '无效的食品二维码'
       setTimeout(() => { scanStatus.value = '' }, 3000)
       return
     }
-
     const foodId = match[1]
     const food = await foods.getById(foodId)
-
-    // 填充表单
     resetForm()
     form.value.name = food.name
     showForm.value = true
@@ -158,17 +157,14 @@ async function handleQrcode(url) {
 async function handleBarcode(code) {
   scanStatus.value = '正在查询商品信息...'
   showScanner.value = false
-
   try {
     const result = await barcode.lookup(code)
     if (result.found) {
-      // 自动填充表单
       resetForm()
       form.value.name = result.goods_name
       showForm.value = true
       scanStatus.value = ''
     } else {
-      // 未找到商品，提示手动输入
       resetForm()
       showForm.value = true
       scanStatus.value = '未找到商品信息，请手动输入名称'
@@ -202,52 +198,56 @@ function statusLabel(food) {
 function statusDot(food) {
   if (food.status === 'expired') return 'bg-red-500'
   if (food.status === 'expiring') return 'bg-yellow-500'
-  return 'bg-green-500'
+  return 'bg-primary-500'
 }
 
 function statusText(food) {
   if (food.status === 'expired') return 'text-red-600'
   if (food.status === 'expiring') return 'text-yellow-600'
-  return 'text-green-600'
+  return 'text-primary-600'
+}
+
+function statusBorder(food) {
+  if (food.status === 'expired') return 'border-l-red-400'
+  if (food.status === 'expiring') return 'border-l-yellow-400'
+  return 'border-l-primary-400'
 }
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen bg-bg">
     <!-- 顶部导航栏 -->
-    <header class="bg-white border-b border-gray-100 sticky top-0 z-10">
+    <header class="bg-white/80 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-10">
       <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-        <h1 class="text-2xl font-bold text-gray-800">Datelife</h1>
+        <h1 class="text-2xl font-bold text-gray-800 font-brand tracking-wide">Datelife</h1>
         <button @click="openAdd"
-          class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full text-sm font-medium transition shadow-sm hover:shadow">
+          class="hidden md:inline-flex bg-primary-500 hover:bg-primary-600 text-white px-5 py-2.5 rounded-full text-sm font-semibold transition shadow-md hover:shadow-lg active:scale-95">
           + 添加食品
         </button>
       </div>
     </header>
 
     <!-- 主内容区 -->
-    <main class="max-w-6xl mx-auto px-4 sm:px-6 py-6">
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 py-6 pb-28 md:pb-6">
 
       <!-- 录入/编辑表单 -->
-      <div v-if="showForm" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-6">
-        <h2 class="text-lg font-semibold mb-4">{{ editing ? '编辑食品' : '添加食品' }}</h2>
+      <div v-if="showForm" class="bg-white rounded-2xl shadow-md border border-gray-100/80 p-5 mb-6">
+        <h2 class="text-lg font-semibold mb-4 font-brand">{{ editing ? '编辑食品' : '添加食品' }}</h2>
 
-        <!-- 扫码状态提示 -->
-        <div v-if="scanStatus" class="mb-3 p-3 bg-blue-50 text-blue-700 rounded-xl text-sm">
+        <div v-if="scanStatus" class="mb-3 p-3 bg-primary-50 text-primary-700 rounded-xl text-sm">
           {{ scanStatus }}
         </div>
 
-        <!-- 扫码模式选择 -->
         <div v-if="showScanMode" class="mb-4 p-4 bg-gray-50 rounded-xl">
           <p class="text-sm text-gray-600 mb-3">选择扫码方式</p>
           <div class="flex gap-3">
             <button @click="startScanWithMode('barcode')"
-              class="flex-1 py-3 px-4 bg-white rounded-xl border border-gray-200 hover:border-green-400 hover:bg-green-50 transition text-center">
+              class="flex-1 py-3 px-4 bg-white rounded-xl border border-gray-200 hover:border-primary-400 hover:bg-primary-50 transition text-center">
               <div class="text-sm font-medium text-gray-700">条形码</div>
               <div class="text-xs text-gray-400 mt-1">扫描商品条形码查询名称</div>
             </button>
             <button @click="startScanWithMode('qrcode')"
-              class="flex-1 py-3 px-4 bg-white rounded-xl border border-gray-200 hover:border-green-400 hover:bg-green-50 transition text-center">
+              class="flex-1 py-3 px-4 bg-white rounded-xl border border-gray-200 hover:border-primary-400 hover:bg-primary-50 transition text-center">
               <div class="text-sm font-medium text-gray-700">二维码</div>
               <div class="text-xs text-gray-400 mt-1">扫描已有食品二维码</div>
             </button>
@@ -255,7 +255,6 @@ function statusText(food) {
           <button @click="showScanMode = false" class="mt-3 text-xs text-gray-400 hover:text-gray-600 transition">取消</button>
         </div>
 
-        <!-- 扫码区域 -->
         <div v-if="showScanner" class="mb-4">
           <div class="flex items-center justify-between mb-2">
             <span class="text-sm text-gray-500">{{ scanMode === 'barcode' ? '扫描条形码' : '扫描二维码' }}</span>
@@ -273,24 +272,24 @@ function statusText(food) {
 
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div class="relative">
-            <input v-model="form.name" placeholder="食品名称" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-green-300 focus:border-transparent" />
+            <input v-model="form.name" placeholder="食品名称" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-transparent" />
             <button @click="startScan" type="button"
-              class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-green-600 transition"
+              class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-primary-600 transition"
               title="扫码识别">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
               </svg>
             </button>
           </div>
-          <input v-model="form.produce_date" type="date" class="border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-300 focus:border-transparent" />
-          <input v-model="form.shelf_life_days" type="number" placeholder="保质期（天）" class="border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-300 focus:border-transparent" />
+          <input v-model="form.produce_date" type="date" class="border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-transparent" />
+          <input v-model="form.shelf_life_days" type="number" placeholder="保质期（天）" class="border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-transparent" />
         </div>
         <div v-if="errMsg" class="text-red-500 text-xs mt-3">{{ errMsg }}</div>
         <div class="flex gap-2 mt-4">
-          <button @click="submitForm" class="bg-green-500 hover:bg-green-600 text-white px-5 py-2 rounded-xl text-sm transition">
+          <button @click="submitForm" class="bg-primary-500 hover:bg-primary-600 text-white px-5 py-2 rounded-xl text-sm font-medium transition shadow-sm">
             {{ editing ? '保存' : '添加' }}
           </button>
-          <button @click="showForm = false; resetForm(); stopScan()" class="text-gray-500 px-4 py-2 rounded-xl text-sm hover:bg-gray-50 transition">
+          <button @click="showForm = false; resetForm(); stopScan()" class="text-gray-500 px-4 py-2 rounded-xl text-sm hover:bg-gray-100 transition">
             取消
           </button>
         </div>
@@ -300,14 +299,15 @@ function statusText(food) {
       <div v-if="loading" class="text-center text-gray-400 py-20">加载中...</div>
 
       <!-- 空状态 -->
-      <div v-else-if="foodList.length === 0" class="text-center text-gray-400 py-20">
-        还没有食品，点击右上角添加吧
+      <div v-else-if="foodList.length === 0" class="text-center py-20">
+        <div class="text-4xl mb-3"> </div>
+        <div class="text-gray-400 text-sm">还没有食品，点击下方 + 添加吧</div>
       </div>
 
       <!-- PC端：表格视图 / 手机端：卡片列表 -->
       <div v-else>
         <!-- PC 表格 -->
-        <div class="hidden md:block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="hidden md:block bg-white rounded-2xl shadow-md border border-gray-100/80 overflow-hidden">
           <table class="w-full">
             <thead>
               <tr class="border-b border-gray-100 text-left text-xs text-gray-400 uppercase tracking-wide">
@@ -321,9 +321,9 @@ function statusText(food) {
             </thead>
             <tbody>
               <tr v-for="food in foodList" :key="food.id"
-                class="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition group">
+                class="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition group">
                 <td class="px-5 py-3.5">
-                  <router-link :to="`/f/${food.id}`" class="font-medium text-gray-800 hover:text-green-600 transition">
+                  <router-link :to="`/f/${food.id}`" class="font-medium text-gray-800 hover:text-primary-600 transition">
                     {{ food.name }}
                   </router-link>
                 </td>
@@ -345,7 +345,7 @@ function statusText(food) {
                       <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                     </button>
                     <button @click.prevent="remove(food.id)" class="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition" title="删除">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 0 0 00-1 1v3M4 7h16" /></svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                     </button>
                   </div>
                 </td>
@@ -358,7 +358,8 @@ function statusText(food) {
         <div class="md:hidden space-y-3">
           <router-link v-for="food in foodList" :key="food.id"
             :to="`/f/${food.id}`"
-            class="block bg-white rounded-2xl shadow-sm border border-gray-100 p-4 active:scale-[0.98] transition">
+            class="block bg-white rounded-2xl shadow-md border border-gray-100/80 border-l-4 p-4 active:scale-[0.98] transition"
+            :class="statusBorder(food)">
             <div class="flex items-center justify-between">
               <div class="flex-1 min-w-0">
                 <div class="font-medium text-gray-800 truncate">{{ food.name }}</div>
@@ -371,7 +372,7 @@ function statusText(food) {
               </div>
               <div class="flex items-center gap-2 ml-3 shrink-0">
                 <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium"
-                  :class="[statusText(food), { 'bg-red-50': food.status==='expired', 'bg-yellow-50': food.status==='expiring', 'bg-green-50': food.status==='normal' }]">
+                  :class="[statusText(food), { 'bg-red-50': food.status==='expired', 'bg-yellow-50': food.status==='expiring', 'bg-primary-50': food.status==='normal' }]">
                   <span :class="statusDot(food)" class="w-1.5 h-1.5 rounded-full"></span>
                   {{ statusLabel(food) }}
                 </span>
