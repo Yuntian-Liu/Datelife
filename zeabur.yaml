@@ -6,6 +6,6 @@ services:
     dockerfile: Dockerfile
     env:
       - NODE_ENV=production
-      - BASE_URL=${DATELIFE_BASE_URL}
+      - BASE_URL=https://datelife.ytunx.com
     ports:
       - 80:3000
