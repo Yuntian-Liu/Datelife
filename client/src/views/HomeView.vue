@@ -2,6 +2,9 @@
 import { ref, onMounted, nextTick } from 'vue'
 import { Html5Qrcode } from 'html5-qrcode'
 import { foods, barcode } from '../utils/api'
+import { useConfirm } from '../composables/useConfirm'
+
+const showConfirm = useConfirm()
 
 const foodList = ref([])
 const loading = ref(true)
@@ -12,6 +15,8 @@ const errMsg = ref('')
 
 // 扫码相关
 const showScanner = ref(false)
+const showScanMode = ref(false)
+const scanMode = ref('barcode') // 'barcode' | 'qrcode'
 const scanStatus = ref('')
 let scanner = null
 
@@ -66,20 +71,30 @@ async function submitForm() {
   }
 }
 
-async function startScan() {
+function startScan() {
+  showScanMode.value = true
+}
+
+async function startScanWithMode(mode) {
+  scanMode.value = mode
+  showScanMode.value = false
   showScanner.value = true
   scanStatus.value = '正在启动摄像头...'
   await nextTick()
+
+  const config = mode === 'barcode'
+    ? { fps: 10, qrbox: { width: 300, height: 100 } }
+    : { fps: 10, qrbox: { width: 250, height: 250 } }
 
   try {
     scanner = new Html5Qrcode('scanner-container')
     await scanner.start(
       { facingMode: 'environment' },
-      { fps: 10, qrbox: { width: 250, height: 150 } },
+      config,
       onScanSuccess,
       () => {} // 忽略扫描失败
     )
-    scanStatus.value = '请将条形码对准扫描框'
+    scanStatus.value = mode === 'barcode' ? '请将条形码对准扫描框' : '请将二维码对准扫描框'
   } catch (e) {
     scanStatus.value = '无法启动摄像头：' + e.message
     setTimeout(() => { showScanner.value = false }, 3000)
@@ -95,12 +110,47 @@ async function stopScan() {
     scanner = null
   }
   showScanner.value = false
+  showScanMode.value = false
   scanStatus.value = ''
 }
 
 async function onScanSuccess(decodedText) {
   await stopScan()
-  await handleBarcode(decodedText)
+
+  // 判断是 URL（二维码）还是数字（条形码）
+  if (decodedText.includes('/f/')) {
+    // 二维码：解析食品 ID 并查询名称
+    await handleQrcode(decodedText)
+  } else {
+    // 条形码：调 API 查询商品
+    await handleBarcode(decodedText)
+  }
+}
+
+async function handleQrcode(url) {
+  scanStatus.value = '正在查询食品信息...'
+
+  try {
+    // 从 URL 中提取食品 ID
+    const match = url.match(/\/f\/(\d+)/)
+    if (!match) {
+      scanStatus.value = '无效的食品二维码'
+      setTimeout(() => { scanStatus.value = '' }, 3000)
+      return
+    }
+
+    const foodId = match[1]
+    const food = await foods.getById(foodId)
+
+    // 填充表单
+    resetForm()
+    form.value.name = food.name
+    showForm.value = true
+    scanStatus.value = ''
+  } catch (e) {
+    scanStatus.value = '查询失败：' + e.message
+    setTimeout(() => { scanStatus.value = '' }, 3000)
+  }
 }
 
 async function handleBarcode(code) {
@@ -129,7 +179,14 @@ async function handleBarcode(code) {
 }
 
 async function remove(id) {
-  if (!confirm('确定要删除这个食品吗？')) return
+  const confirmed = await showConfirm({
+    title: '删除食品',
+    message: '确定要删除这个食品吗？此操作不可恢复。',
+    confirmText: '删除',
+    cancelText: '取消',
+    type: 'danger'
+  })
+  if (!confirmed) return
   await foods.delete(id)
   foodList.value = foodList.value.filter(f => f.id !== id)
 }
@@ -178,17 +235,38 @@ function statusText(food) {
           {{ scanStatus }}
         </div>
 
+        <!-- 扫码模式选择 -->
+        <div v-if="showScanMode" class="mb-4 p-4 bg-gray-50 rounded-xl">
+          <p class="text-sm text-gray-600 mb-3">选择扫码方式</p>
+          <div class="flex gap-3">
+            <button @click="startScanWithMode('barcode')"
+              class="flex-1 py-3 px-4 bg-white rounded-xl border border-gray-200 hover:border-green-400 hover:bg-green-50 transition text-center">
+              <div class="text-sm font-medium text-gray-700">条形码</div>
+              <div class="text-xs text-gray-400 mt-1">扫描商品条形码查询名称</div>
+            </button>
+            <button @click="startScanWithMode('qrcode')"
+              class="flex-1 py-3 px-4 bg-white rounded-xl border border-gray-200 hover:border-green-400 hover:bg-green-50 transition text-center">
+              <div class="text-sm font-medium text-gray-700">二维码</div>
+              <div class="text-xs text-gray-400 mt-1">扫描已有食品二维码</div>
+            </button>
+          </div>
+          <button @click="showScanMode = false" class="mt-3 text-xs text-gray-400 hover:text-gray-600 transition">取消</button>
+        </div>
+
         <!-- 扫码区域 -->
         <div v-if="showScanner" class="mb-4">
           <div class="flex items-center justify-between mb-2">
-            <span class="text-sm text-gray-500">扫描条形码</span>
+            <span class="text-sm text-gray-500">{{ scanMode === 'barcode' ? '扫描条形码' : '扫描二维码' }}</span>
             <button @click="stopScan" class="text-gray-400 hover:text-gray-600 transition">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
-          <div id="scanner-container" class="w-full max-w-xs rounded-lg overflow-hidden relative"></div>
+          <div id="scanner-container"
+            class="w-full max-w-xs rounded-lg overflow-hidden relative"
+            :class="{ 'has-guide-line': scanMode === 'barcode' }">
+          </div>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -310,7 +388,7 @@ function statusText(food) {
   position: relative;
 }
 
-#scanner-container::after {
+#scanner-container.has-guide-line::after {
   content: '';
   position: absolute;
   top: 50%;

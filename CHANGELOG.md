@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [1.2.0-alpha] - 2026-05-18
+
+### Added
+
+- Scan mode selection — choose between barcode or QR code scanning
+- QR code scanning — scan existing food QR codes to auto-fill names
+- Custom confirmation dialog — replaces browser native confirm for delete actions
+
+### Improved
+
+- Mobile camera support — HTTPS enabled for camera access on mobile devices
+- Scan guide line — only shows in barcode mode, hidden in QR code mode
+
+### Fixed
+
+- Mobile camera access — added HTTPS support to enable camera on mobile browsers
+
+---
+
 ## [1.1.0-alpha] - 2026-05-18
 
 ### Added
