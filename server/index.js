@@ -21,8 +21,13 @@ app.use('/api/foods', foodsRouter)
 if (isProd) {
   const clientDist = path.join(__dirname, '..', 'client', 'dist')
   app.use(express.static(clientDist))
-  app.get('/{path*}', (_req, res) => {
-    res.sendFile(path.join(clientDist, 'index.html'))
+  // SPA fallback：所有未匹配的 API 路由返回 index.html
+  app.use((_req, res, next) => {
+    if (!res.headersSent) {
+      res.sendFile(path.join(clientDist, 'index.html'))
+    } else {
+      next()
+    }
   })
 }
 
