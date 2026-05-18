@@ -85,7 +85,7 @@ async function startScanWithMode(mode) {
   // 根据屏幕宽度调整扫码框大小
   const isMobile = window.innerWidth < 640
   const config = mode === 'barcode'
-    ? { fps: 10, qrbox: { width: isMobile ? 250 : 300, height: isMobile ? 80 : 100 } }
+    ? { fps: 10, qrbox: { width: isMobile ? 250 : 300, height: isMobile ? 120 : 150 } }
     : { fps: 10, qrbox: { width: isMobile ? 200 : 250, height: isMobile ? 200 : 250 } }
 
   try {

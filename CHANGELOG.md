@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [1.2.2-alpha] - 2026-05-18
+
+### Fixed
+
+- Scan frame height — increased barcode scan frame height for better usability
+
+---
+
 ## [1.2.1-alpha] - 2026-05-18
 
 ### Improved
