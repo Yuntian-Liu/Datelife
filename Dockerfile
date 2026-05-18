@@ -8,6 +8,9 @@ RUN npm run build
 
 FROM node:20-alpine AS runtime
 
+# 安装 better-sqlite3 编译依赖（Python + 构建工具）
+RUN apk add --no-cache python3 make g++
+
 WORKDIR /app/server
 COPY server/package*.json ./
 RUN npm install --production
