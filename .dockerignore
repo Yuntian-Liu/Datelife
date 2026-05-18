@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.env
+*.db
+.DS_Store
+.git
+RELEASE_SOP.md
+*.md
+!client/README.md

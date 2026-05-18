@@ -1,0 +1,11 @@
+name: datelife
+
+services:
+  - name: web
+    type: web
+    dockerfile: Dockerfile
+    env:
+      - NODE_ENV=production
+      - BASE_URL=${DATELIFE_BASE_URL}
+    ports:
+      - 80:3000

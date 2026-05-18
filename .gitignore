@@ -1,5 +1,42 @@
+# Dependencies
 node_modules/
+
+# Build output
 dist/
+client/dist/
+
+# Environment
 .env
+
+# Database (SQLite)
 *.db
+*.db-shm
+*.db-wal
+server/data/
+
+# OS files
 .DS_Store
+Thumbs.db
+
+# IDE / Editor
+.vscode/
+*.swp
+*.swo
+*~
+
+# Internal docs (not for public repo)
+RELEASE_SOP.md
+
+# Example images from MyScore reference
+example1.as.jpg
+example2.as.jpg
+example3.as.jpg
+example4.as.jpg
+
+# Vite template defaults (not needed)
+client/.gitignore
+client/README.md
+client/public/favicon.svg
+client/public/icons.svg
+client/src/assets/vite.svg
+client/src/assets/hero.png
