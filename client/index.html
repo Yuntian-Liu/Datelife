@@ -4,7 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Datelife - 食品日期管理</title>
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <script>
+      // 用 canvas 生成 emoji favicon（SVG emoji 在浏览器中渲染不稳定）
+      const c = document.createElement('canvas')
+      c.width = 128; c.height = 128
+      const ctx = c.getContext('2d')
+      ctx.font = '110px serif'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText('🍱', 64, 64)
+      const link = document.createElement('link')
+      link.rel = 'icon'
+      link.href = c.toDataURL('image/png')
+      document.head.appendChild(link)
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai:wght@400;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
