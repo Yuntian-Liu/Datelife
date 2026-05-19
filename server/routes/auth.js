@@ -36,7 +36,7 @@ router.post('/send-code', sendCodeLimiter, requireTurnstile, async (req, res) =>
     INSERT INTO verification_codes (email, code, expires_at, attempts)
     VALUES (?, ?, ?, 0)
     ON CONFLICT(email) DO UPDATE SET code=?, expires_at=?, attempts=0
-  `).run(email, code, expiresAt, email, code, expiresAt)
+  `).run(email, code, expiresAt, code, expiresAt)
 
   try {
     await sendVerificationCode(email, code)
