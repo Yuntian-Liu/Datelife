@@ -6,6 +6,7 @@ const { getDb } = require('./lib/db')
 const foodsRouter = require('./routes/foods')
 const barcodeRouter = require('./routes/barcode')
 const authRouter = require('./routes/auth')
+const { optionalAuth } = require('./middleware/auth')
 
 const app = express()
 const PORT = process.env.PORT || 3000
@@ -18,7 +19,7 @@ app.use(express.json())
 getDb()
 
 // 路由
-app.use('/api/foods', foodsRouter)
+app.use('/api/foods', optionalAuth, foodsRouter)
 app.use('/api/barcode', barcodeRouter)
 app.use('/api/auth', authRouter)
 
