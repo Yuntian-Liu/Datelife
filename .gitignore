@@ -36,7 +36,6 @@ example4.as.jpg
 # Vite template defaults (not needed)
 client/.gitignore
 client/README.md
-client/public/favicon.svg
 client/public/icons.svg
 client/src/assets/vite.svg
 client/src/assets/hero.png
