@@ -2,6 +2,7 @@ const Database = require('better-sqlite3')
 const path = require('path')
 
 const DB_PATH = process.env.DATABASE_PATH || path.join(__dirname, '..', 'data', 'datelife.db')
+console.log('[DB] 数据库路径:', DB_PATH)
 
 let db
 
