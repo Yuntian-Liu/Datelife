@@ -10,7 +10,7 @@ async function sendVerificationCode(email, code) {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      from: 'Datelife <noreply@datelife.ytunx.com>',
+      from: 'Datelife <noreply@ytunx.com>',
       to: [email],
       subject: '【Datelife】登录验证码',
       html: `
