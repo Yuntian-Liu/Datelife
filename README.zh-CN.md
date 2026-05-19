@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-2.0.0--alpha-blue" alt="Version" />
+  <img src="https://img.shields.io/badge/Version-2.1.0--alpha-blue" alt="Version" />
   <img src="https://img.shields.io/badge/Vue-3.x-4FC08D?logo=vue.js&logoColor=white" alt="Vue" />
   <img src="https://img.shields.io/badge/Express-Node.js-000000?logo=express&logoColor=white" alt="Express" />
   <img src="https://img.shields.io/badge/SQLite-better--sqlite3-003B57?logo=sqlite&logoColor=white" alt="SQLite" />
@@ -35,6 +35,10 @@
 | 二维码生成 | 每个食品专属二维码，扫码直达详情页 |
 | 详情展示 | 完整信息 + 状态 + 可打印二维码 |
 | 编辑删除 | 随时修改或移除记录 |
+| 用户认证 | 邮箱验证码登录 + 密码登录 |
+| 徽章系统 | 开发者/内测/共创者徽章标识 |
+| 数据导入导出 | JSON 格式备份，支持去重 |
+| PWA 支持 | 可添加到桌面，离线缓存 |
 
 ### 响应式设计
 
@@ -47,7 +51,9 @@
 | 层 | 技术 | 说明 |
 |----|------|------|
 | 前端 | Vue 3 + Vite | 渐进式框架，快速开发 |
-| 样式 | Tailwind CSS | 原子化 CSS，高度可定制 |
+| 样式 | Tailwind CSS v4 | 原子化 CSS，高度可定制 |
+| 认证 | JWT + Cloudflare Turnstile | Token 认证 + 人机验证 |
+| 邮件 | Resend API | 验证码发送 |
 | 后端 | Express.js | 轻量级 Node.js 框架 |
 | 数据库 | SQLite (better-sqlite3) | 零配置，文件型数据库 |
 | 二维码 | qrcode (node-qrcode) | 轻量级二维码生成 |
@@ -110,19 +116,42 @@ DATABASE_PATH=./data/datelife.db  # 数据库文件路径
 Datelife/
 ├── client/                    # Vue 3 前端
 │   ├── src/
-│   │   ├── main.js           # 入口
+│   │   ├── main.js           # 入口 + Service Worker 注册
 │   │   ├── App.vue           # 根组件
 │   │   ├── router/index.js   # 路由配置
-│   │   ├── utils/api.js      # API 封装
+│   │   ├── utils/
+│   │   │   ├── api.js        # API 封装（auth、foods、barcode）
+│   │   │   ├── badges.js     # 徽章定义
+│   │   │   └── agreement.js  # 用户协议 / 隐私政策 HTML
+│   │   ├── composables/      # Vue 组合式函数
+│   │   │   ├── useAuth.js    # 认证状态管理
+│   │   │   └── useConfirm.js # 确认弹窗组合式函数
+│   │   ├── components/       # 可复用组件
+│   │   │   ├── BottomNav.vue  # 移动端浮动导航栏
+│   │   │   ├── ConfirmDialog.vue
+│   │   │   └── TurnstileWidget.vue
 │   │   └── views/
 │   │       ├── HomeView.vue  # 首页（表格/卡片双视图）
-│   │       └── FoodDetail.vue # 详情页（含二维码）
+│   │       ├── FoodDetail.vue # 详情页（含二维码）
+│   │       └── SettingsView.vue # 设置页（含数据管理）
+│   ├── public/
+│   │   ├── manifest.json     # PWA 清单
+│   │   ├── sw.js            # Service Worker
+│   │   └── favicon.svg      # 应用图标（便当 emoji）
 │   └── vite.config.js        # Vite 配置（Tailwind + 代理）
 │
 ├── server/                    # Express 后端
 │   ├── index.js              # 入口（含生产环境静态文件服务）
-│   ├── routes/foods.js       # 食品 CRUD + 二维码接口
-│   └── lib/db.js             # SQLite 数据库层
+│   ├── routes/
+│   │   ├── foods.js          # 食品 CRUD + 二维码接口
+│   │   ├── barcode.js        # 条形码查询接口
+│   │   └── auth.js           # 认证接口（登录、注册、资料）
+│   ├── lib/
+│   │   ├── db.js             # SQLite 数据库层
+│   │   ├── jwt.js            # JWT Token 工具
+│   │   └── email.js         # Resend 邮件发送
+│   └── middleware/
+│       └── auth.js           # 认证中间件（必选 / 可选）
 │
 ├── DEVELOPMENT.md             # 开发文档
 └── .env.example              # 环境变量模板
@@ -131,9 +160,9 @@ Datelife/
 ## 路线图
 
 - [x] MVP：食品 CRUD + 状态计算 + 二维码 + 响应式布局
-- [ ] P1：条形码识别（Open Food Facts API）、分类筛选、视觉打磨
-- [ ] P2：认证系统（邮箱验证码 + 密码登录）
-- [ ] P3：临期提醒、批量录入、图片上传
+- [x] P1：认证系统（邮箱验证码 + 密码登录）+ 徽章系统
+- [x] P2：设置页重构 + 数据管理（导入/导出）+ PWA 支持
+- [ ] P3：条形码识别、分类筛选、临期提醒、批量录入
 
 ## 体验使用
 

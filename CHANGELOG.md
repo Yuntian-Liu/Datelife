@@ -4,6 +4,30 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2.1.0-alpha] - 2026-05-20
+
+### Added
+
+- Settings page UI redesign — grouped icon list layout inspired by "有数" app design
+- Data management — JSON export/import for food data with deduplication support
+- PWA support — add to homescreen, Service Worker offline caching strategy
+- Brand banner card — green gradient showing managed food count
+- Dev-mode mock login button (auto-removed in production)
+
+### Improved
+
+- Settings page sections: Profile / Data Management / About / Account & Security
+- Each setting row has a colored icon (blue/amber/green/violet/red/gray)
+- Logout now shows confirmation dialog (useConfirm)
+- Branded login prompt for unauthenticated users — banner + icon-enhanced feature list
+- Version number displayed at top of About section
+
+### Fixed
+
+- Import data deduplication issue (dedup by name+produce_date)
+
+---
+
 ## [1.3.0-alpha] - 2026-05-19
 
 ### Added
