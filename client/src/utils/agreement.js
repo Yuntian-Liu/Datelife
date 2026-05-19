@@ -1,0 +1,114 @@
+export const USER_AGREEMENT_HTML = `
+<div class="space-y-4">
+  <h3 class="text-base font-semibold text-gray-800">一、服务描述</h3>
+  <p>Datelife（"食品日期管理"）是一款用于帮助用户管理食品保质期的在线工具。主要功能包括：录入食品的生产日期和保质期、自动计算过期时间并标记状态（正常/临期/过期）、为每个食品生成专属二维码供扫码查看详情等。</p>
+
+  <h3 class="text-base font-semibold text-gray-800">二、用户账号</h3>
+  <p>使用 Datelife 的云端同步功能需要注册账号。账号安全由用户自行负责，包括但不限于：保管登录密码、不向他人泄露验证码、及时退出公共设备上的登录状态等。Datelife 不会以任何理由主动询问您的密码。</p>
+
+  <h3 class="text-base font-semibold text-gray-800">三、用户行为规范</h3>
+  <p>在使用 Datelife 服务时，您同意不会从事以下行为：</p>
+  <ul class="list-disc pl-5 space-y-1">
+    <li>利用本平台进行任何非法活动</li>
+    <li>对本平台进行技术攻击或干扰（包括但不限于：暴力破解、DDoS 攻击、爬取数据）</li>
+    <li>批量注册虚假账号</li>
+    <li>录入违反法律法规的食品信息或内容</li>
+    <li>利用本平台传播有害信息</li>
+  </ul>
+
+  <h3 class="text-base font-semibold text-gray-800">四、知识产权</h3>
+  <p>您录入的所有食品数据归您所有。Datelife 平台的代码、设计、商标等知识产权归开发者所有，受法律保护。</p>
+
+  <h3 class="text-base font-semibold text-gray-800">五、服务可用性</h3>
+  <p>我们将尽最大努力保证服务的稳定运行，但不对因不可抗力（包括但不限于：服务器故障、网络中断、第三方服务异常）导致的服务中断承担责任。服务可能会在不预先通知的情况下进行维护升级。</p>
+
+  <h3 class="text-base font-semibold text-gray-800">六、免责声明</h3>
+  <p>Datelife 按「现状」(As Is) 提供服务，不对以下情况承担任何责任：</p>
+  <ul class="list-disc pl-5 space-y-1">
+    <li>因您自身原因（如密码泄露、设备丢失）导致的数据泄露或损失</li>
+    <li>基于我们提供的数据计算出的过期时间与实际过期时间存在偏差导致的食品误食</li>
+    <li>因未及时查看提醒而食用过期食品造成的任何健康问题</li>
+  </ul>
+
+  <h3 class="text-base font-semibold text-gray-800">七、协议变更</h3>
+  <p>我们有权在必要时修改本协议内容。修改后的协议将在应用内公示，您继续使用 Datelife 即视为同意修改后的协议。</p>
+
+  <h3 class="text-base font-semibold text-gray-800">八、适用法律</h3>
+  <p>本协议的解释、效力及纠纷解决均适用中华人民共和国法律。</p>
+</div>
+<p class="text-xs text-gray-400 mt-4 pt-3 border-t border-gray-200">最后更新：2026 年 5 月 19 日</p>
+`
+
+export const PRIVACY_POLICY_HTML = `
+<div class="space-y-4">
+  <h3 class="text-base font-semibold text-gray-800">一、信息收集</h3>
+  <p>为了提供 Datelife 服务，我们会收集以下信息：</p>
+  <ul class="list-disc pl-5 space-y-1">
+    <li><strong>账号信息</strong>：邮箱地址、昵称、头像种子</li>
+    <li><strong>业务数据</strong>：您录入的食品名称、生产日期、保质期等数据</li>
+  </ul>
+  <p><strong>我们不会收集</strong>：真实姓名、身份证号、手机号码、位置信息等敏感个人信息。</p>
+
+  <h3 class="text-base font-semibold text-gray-800">二、信息使用</h3>
+  <p>收集的信息仅用于以下目的：</p>
+  <ul class="list-disc pl-5 space-y-1">
+    <li>为您提供云同步功能，使您的食品数据可在多设备间访问</li>
+    <li>发送验证码邮件以完成身份验证</li>
+    <li>生成和管理您的专属头像</li>
+    <li>改进和优化我们的产品和服务</li>
+  </ul>
+  <p><strong>我们承诺</strong>：不出售、不共享、不交易您的任何个人数据。您的数据不会被用于任何 AI 模型训练。</p>
+
+  <h3 class="text-base font-semibold text-gray-800">三、信息存储</h3>
+  <ul class="list-disc pl-5 space-y-1">
+    <li><strong>本地存储</strong>：使用浏览器 localStorage 存储登录状态令牌 (Token)</li>
+    <li><strong>服务端存储</strong>：您的加密密码哈希值和个人数据存储在我们的数据库中</li>
+    <li>登录令牌 (JWT) 有效期为 30 天，过期后需重新登录</li>
+    <li>密码采用 scrypt 算法进行单向哈希存储，即使我们也无法还原您的原始密码</li>
+  </ul>
+
+  <h3 class="text-base font-semibold text-gray-800">四、信息保护</h3>
+  <ul class="list-disc pl-5 space-y-1">
+    <li>所有数据传输均通过 HTTPS 加密通道</li>
+    <li>密码经过单向哈希处理，不以明文形式存储</li>
+    <li>数据库部署在持久化存储卷中，避免容器重启导致数据丢失</li>
+    <li>我们对 API 接口实施速率限制，防止暴力破解</li>
+  </ul>
+
+  <h3 class="text-base font-semibold text-gray-800">五、用户权利</h3>
+  <p>您对个人数据享有以下权利：</p>
+  <ul class="list-disc pl-5 space-y-1">
+    <li><strong>导出数据</strong>：您可以随时请求获取我们持有的您的所有数据副本</li>
+    <li><strong>删除数据</strong>：退出登录可清除本地缓存；如需删除服务器端数据，请在设置页操作或联系我们（将在 7 个工作日内处理）</li>
+    <li><strong>更正信息</strong>：您可以随时修改昵称、个性签名等信息</li>
+    <li><strong>拒绝非必要收集</strong>：除账号必需信息外，其他信息均为可选填写</li>
+  </ul>
+
+  <h3 class="text-base font-semibold text-gray-800">六、Cookie 与本地存储</h3>
+  <p>我们仅在您的浏览器中使用 localStorage 来保存登录状态，不使用任何第三方 Cookie，也不嵌入任何追踪脚本或分析工具。</p>
+
+  <h3 class="text-base font-semibold text-gray-800">七、第三方服务</h3>
+  <p>为提供完整服务，我们集成了以下第三方服务：</p>
+  <ul class="list-disc pl-5 space-y-1">
+    <li><strong>Resend</strong> — 用于发送验证码邮件（邮件服务商，美国）</li>
+    <li><strong>DiceBear</strong> — 用于根据头像种子生成个性化头像图片（德国）</li>
+    <li><strong>Cloudflare Turnstile</strong> — 用于人机验证，防止自动化滥用（美国）</li>
+    <li><strong>apibyte.cn</strong> — 用于查询商品条形码信息（中国）</li>
+  </ul>
+  <p>这些服务均有各自独立的隐私政策。我们确保这些集成符合最小必要原则。
+
+  <h3 class="text-base font-semibold text-gray-800">八、数据保留与删除</h3>
+  <ul class="list-disc pl-5 space-y-1">
+    <li>在您账号存续期间，我们将保留您的数据</li>
+    <li>如您发起删除请求，我们将在 7 个工作日内完成删除</li>
+    <li>如计划停止运营，我们将至少提前 30 天通知用户进行数据备份</li>
+  </ul>
+
+  <h3 class="text-base font-semibold text-gray-800">九、未成年人保护</h3>
+  <p>如果您未满 14 周岁，请在监护人的陪同和同意下使用本服务。如发现未成年人未经监护人同意注册了账号，请联系我们进行处理。</p>
+
+  <h3 class="text-base font-semibold text-gray-800">十、政策更新</h3>
+  <p>当本隐私政策发生重大变更时，我们将在应用内显著位置发布更新通知。建议您定期查阅本政策以了解最新信息。</p>
+</div>
+<p class="text-xs text-gray-400 mt-4 pt-3 border-t border-gray-200">最后更新：2026 年 5 月 19 日</p>
+`

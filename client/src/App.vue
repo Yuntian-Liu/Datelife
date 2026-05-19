@@ -1,13 +1,17 @@
 <script setup>
 import { computed, provide, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import { useAuth } from './composables/useAuth'
 import BottomNav from './components/BottomNav.vue'
 
 const route = useRoute()
+const { user, isAuthenticated } = useAuth()
+
 const showNav = computed(() => route.path === '/')
 
 const showAddForm = ref(false)
 provide('showAddForm', showAddForm)
+provide('auth', { user, isAuthenticated })
 </script>
 
 <template>

@@ -1,13 +1,16 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { foods } from '../utils/api'
+import { useConfirm } from '../composables/useConfirm'
 
 const route = useRoute()
 const router = useRouter()
 const food = ref(null)
 const error = ref('')
 const loading = ref(true)
+const { isAuthenticated } = inject('auth', { isAuthenticated: computed(() => false) })
+const isOwner = computed(() => food.value?.is_owner && isAuthenticated.value)
 const qrKey = ref(0)
 
 async function loadFood() {
@@ -56,6 +59,25 @@ function statusBorder(f) {
   if (f.status === 'expired') return 'border-l-red-400'
   if (f.status === 'expiring') return 'border-l-yellow-400'
   return 'border-l-primary-400'
+}
+
+const showConfirm = useConfirm()
+
+function openEdit() {
+  router.push({ path: '/', query: { edit: food.id } })
+}
+
+async function handleDelete() {
+  const confirmed = await showConfirm({
+    title: '删除食品',
+    message: '确定要删除这个食品吗？此操作不可恢复。',
+    confirmText: '删除',
+    cancelText: '取消',
+    type: 'danger'
+  })
+  if (!confirmed) return
+  await foods.delete(food.id)
+  router.push('/')
 }
 </script>
 
@@ -111,6 +133,19 @@ function statusBorder(f) {
 
           <div class="text-xs text-gray-300 mt-8 pt-4 border-t border-gray-100">
             录入于 {{ food.created_at }}
+          </div>
+
+          <!-- 编辑/删除按钮（仅自己的食品） -->
+          <div v-if="isOwner" class="flex gap-2 mt-4 pt-4 border-t border-gray-100">
+            <button @click="openEdit" class="flex-1 bg-primary-50 hover:bg-primary-100 text-primary-600 py-2 rounded-xl text-sm font-medium transition">
+              编辑
+            </button>
+            <button @click="handleDelete" class="flex-1 bg-red-50 hover:bg-red-100 text-red-500 py-2 rounded-xl text-sm font-medium transition">
+              删除
+            </button>
+          </div>
+          <div v-else-if="isAuthenticated && !isOwner" class="mt-4 pt-4 border-t border-gray-100 text-center">
+            <p class="text-xs text-gray-400">这是其他用户的食品</p>
           </div>
         </div>
 

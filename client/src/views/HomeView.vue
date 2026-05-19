@@ -1,10 +1,15 @@
 <script setup>
-import { ref, onMounted, nextTick, inject, watch } from 'vue'
+import { ref, onMounted, nextTick, inject, watch, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { Html5Qrcode } from 'html5-qrcode'
 import { foods, barcode } from '../utils/api'
 import { useConfirm } from '../composables/useConfirm'
+import { getBadge } from '../utils/badges'
 
+const router = useRouter()
 const showConfirm = useConfirm()
+const { user, isAuthenticated } = inject('auth', { user: ref(null), isAuthenticated: computed(() => false) })
+const badge = computed(() => getBadge(user.value?.badge))
 
 const foodList = ref([])
 const loading = ref(true)
@@ -30,11 +35,14 @@ const scanStatus = ref('')
 let scanner = null
 
 onMounted(async () => {
-  try {
-    foodList.value = await foods.getAll()
-  } finally {
-    loading.value = false
+  if (isAuthenticated.value) {
+    try {
+      foodList.value = await foods.getAll()
+    } catch (e) {
+      console.error('加载食品列表失败:', e)
+    }
   }
+  loading.value = false
 })
 
 function resetForm() {
@@ -218,20 +226,51 @@ function statusBorder(food) {
   <div class="min-h-screen bg-bg">
     <!-- 顶部导航栏 -->
     <header class="bg-white/80 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-10">
-      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-4">
         <h1 class="text-2xl font-bold text-gray-800 font-brand tracking-wide">Datelife</h1>
-        <button @click="openAdd"
-          class="hidden md:inline-flex bg-primary-500 hover:bg-primary-600 text-white px-5 py-2.5 rounded-full text-sm font-semibold transition shadow-md hover:shadow-lg active:scale-95">
-          + 添加食品
-        </button>
+
+        <!-- 已登录：登录按钮 | 已登录：添加 + 设置 -->
+        <div v-if="isAuthenticated" class="flex items-center gap-2">
+          <button @click="openAdd"
+            class="hidden md:inline-flex bg-primary-500 hover:bg-primary-600 text-white px-5 py-2.5 rounded-full text-sm font-semibold transition shadow-md hover:shadow-lg active:scale-95">
+            + 添加食品
+          </button>
+          <router-link to="/settings"
+            class="hidden md:inline-flex items-center justify-center gap-1.5 text-gray-500 hover:text-primary-500 px-3 py-2 rounded-xl hover:bg-primary-50 transition text-sm font-medium transition">
+            <div v-if="user?.avatar_seed" class="relative">
+              <img :src="`https://api.dicebear.com/7.x/thumbs/svg?seed=${user.avatar_seed}`"
+                class="w-7 h-7 rounded-full bg-primary-100" alt="头像" />
+              <span v-if="badge" class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border border-white shadow-sm"
+                :class="badge?.label === '开发者' ? 'bg-amber-400' : badge?.label === '内测' ? 'bg-emerald-400' : 'bg-violet-400'"></span>
+            </div>
+            <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.94 1.543.826 3.31-.826 2.37 2.37a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31.826-2.37-2.37z M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+            <span>设置</span>
+          </router-link>
+        </div>
+        <router-link v-else to="/settings"
+          class="hidden md:inline-flex ml-auto bg-primary-500 hover:bg-primary-600 text-white px-5 py-2.5 rounded-full text-sm font-semibold transition shadow-md hover:shadow-lg active:scale-95">
+          登录 →
+        </router-link>
       </div>
     </header>
 
     <!-- 主内容区 -->
     <main class="max-w-6xl mx-auto px-4 sm:px-6 py-6 pb-28 md:pb-6">
 
-      <!-- 录入/编辑表单 -->
-      <div v-if="showForm" class="bg-white rounded-2xl shadow-md border border-gray-100/80 p-5 mb-6">
+      <!-- 未登录：欢迎页 -->
+      <div v-if="!isAuthenticated" class="text-center py-20">
+        <div class="mb-4">
+          <span class="font-brand text-3xl font-bold text-gray-800">🍱 Datelife</span>
+        </div>
+        <p class="text-gray-400 mb-8">管理你的食品保质期</p>
+        <router-link to="/settings"
+          class="inline-flex items-center gap-2 bg-primary-500 hover:bg-primary-600 text-white px-8 py-3 rounded-full font-medium transition shadow-md hover:shadow-lg active:scale-95">
+          开始使用 →
+        </router-link>
+      </div>
+
+      <!-- 已登录：录入/编辑表单 -->
+      <div v-if="isAuthenticated && showForm" class="bg-white rounded-2xl shadow-md border border-gray-100/80 p-5 mb-6">
         <h2 class="text-lg font-semibold mb-4 font-brand">{{ editing ? '编辑食品' : '添加食品' }}</h2>
 
         <div v-if="scanStatus" class="mb-3 p-3 bg-primary-50 text-primary-700 rounded-xl text-sm">
@@ -296,16 +335,16 @@ function statusBorder(food) {
       </div>
 
       <!-- 加载中 -->
-      <div v-if="loading" class="text-center text-gray-400 py-20">加载中...</div>
+      <div v-if="isAuthenticated && loading" class="text-center text-gray-400 py-20">加载中...</div>
 
       <!-- 空状态 -->
-      <div v-else-if="foodList.length === 0" class="text-center py-20">
+      <div v-else-if="isAuthenticated && foodList.length === 0" class="text-center py-20">
         <div class="text-4xl mb-3"> </div>
-        <div class="text-gray-400 text-sm">还没有食品，点击下方 + 添加吧</div>
+        <div class="text-gray-400 text-sm">还没有食品，点击 + 添加吧</div>
       </div>
 
       <!-- PC端：表格视图 / 手机端：卡片列表 -->
-      <div v-else>
+      <div v-else-if="isAuthenticated">
         <!-- PC 表格 -->
         <div class="hidden md:block bg-white rounded-2xl shadow-md border border-gray-100/80 overflow-hidden">
           <table class="w-full">

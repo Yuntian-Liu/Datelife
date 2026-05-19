@@ -98,6 +98,31 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2.0.0-alpha] - 2026-05-19
+
+### Added
+
+- **Authentication system** — email verification code + password dual-mode login/register
+- JWT authentication (HMAC-SHA256, 30-day expiry) with Bearer token middleware
+- Cloudflare Turnstile human verification (required before sending verification codes)
+- Resend API integration for sending 6-digit verification code emails
+- User Agreement & Privacy Policy — must agree before registration
+- Auto-registration hint — unregistered emails auto-create account after verification
+- **User Badge system** — Developer / Early Tester / Co-creator badges (configurable via SQL)
+- Login page with 3-step wizard (email → verification code → register)
+- Settings page dual-state (welcome for guests / profile editing for logged-in users)
+- PC Header navigation — avatar + settings for logged-in users, login button for guests
+
+### Improved
+
+- Foods route now enforces user data isolation via `user_id` permission checks
+- Legacy food data remains publicly accessible (`user_id` allows NULL)
+- Password security: scrypt hashing + random salt + timingSafeEqual comparison
+- Rate limiting: IP-based sliding window (3 sends/minute for verification codes)
+- Development docs fully rewritten with better formatting and new feature documentation
+
+---
+
 ## [Unreleased]
 
 To be released.

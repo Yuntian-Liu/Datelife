@@ -1,6 +1,7 @@
 const { Router } = require('express')
 const QRCode = require('qrcode')
 const { getDb } = require('../lib/db')
+const { authRequired } = require('../middleware/auth')
 
 const router = Router()
 
@@ -26,42 +27,55 @@ function attachStatus(food) {
   return { ...food, status, days_left: daysLeft }
 }
 
-// 获取所有食品
+// 获取食品列表（已登录只返回自己的，未登录返回空）
 router.get('/', (req, res) => {
   const db = getDb()
-  const foods = db.prepare('SELECT * FROM foods ORDER BY created_at DESC').all()
+  let foods
+
+  if (req.user) {
+    foods = db.prepare('SELECT * FROM foods WHERE user_id = ? ORDER BY created_at DESC').all(req.user.uid)
+  } else {
+    foods = []
+  }
+
   res.json(foods.map(attachStatus))
 })
 
-// 获取单个食品（详情页用，无需登录）
+// 获取单个食品（公开，附加 is_owner 标记）
 router.get('/:id', (req, res) => {
   const db = getDb()
   const food = db.prepare('SELECT * FROM foods WHERE id = ?').get(req.params.id)
   if (!food) return res.status(404).json({ error: '食品不存在' })
-  res.json(attachStatus(food))
+
+  const result = attachStatus(food)
+  result.is_owner = req.user ? food.user_id === req.user.uid : false
+  res.json(result)
 })
 
-// 新增食品
-router.post('/', (req, res) => {
+// 新增食品（需要登录）
+router.post('/', authRequired, (req, res) => {
   const { name, barcode, produce_date, shelf_life_days, category } = req.body
   if (!name || !produce_date || !shelf_life_days) {
     return res.status(400).json({ error: '名称、生产日期、保质期天数必填' })
   }
+
   const expire_date = calcExpireDate(produce_date, shelf_life_days)
   const db = getDb()
   const result = db.prepare(`
-    INSERT INTO foods (name, barcode, produce_date, shelf_life_days, expire_date, category)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `).run(name, barcode || null, produce_date, shelf_life_days, expire_date, category || null)
+    INSERT INTO foods (user_id, name, barcode, produce_date, shelf_life_days, expire_date, category)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(req.user.uid, name, barcode || null, produce_date, shelf_life_days, expire_date, category || null)
+
   const food = db.prepare('SELECT * FROM foods WHERE id = ?').get(result.lastInsertRowid)
   res.status(201).json(attachStatus(food))
 })
 
-// 编辑食品
-router.put('/:id', (req, res) => {
+// 编辑食品（需要登录 + 是自己的）
+router.put('/:id', authRequired, (req, res) => {
   const db = getDb()
   const existing = db.prepare('SELECT * FROM foods WHERE id = ?').get(req.params.id)
   if (!existing) return res.status(404).json({ error: '食品不存在' })
+  if (existing.user_id !== req.user.uid) return res.status(403).json({ error: '无权操作此食品' })
 
   const name = req.body.name ?? existing.name
   const barcode = req.body.barcode ?? existing.barcode
@@ -79,15 +93,19 @@ router.put('/:id', (req, res) => {
   res.json(attachStatus(food))
 })
 
-// 删除食品
-router.delete('/:id', (req, res) => {
+// 删除食品（需要登录 + 是自己的）
+router.delete('/:id', authRequired, (req, res) => {
   const db = getDb()
+  const existing = db.prepare('SELECT * FROM foods WHERE id = ?').get(req.params.id)
+  if (!existing) return res.status(404).json({ error: '食品不存在' })
+  if (existing.user_id !== req.user.uid) return res.status(403).json({ error: '无权操作此食品' })
+
   const result = db.prepare('DELETE FROM foods WHERE id = ?').run(req.params.id)
   if (result.changes === 0) return res.status(404).json({ error: '食品不存在' })
   res.json({ success: true })
 })
 
-// 二维码生成（返回 PNG 图片）
+// 二维码生成（公开）
 router.get('/:id/qrcode', (req, res) => {
   const db = getDb()
   const food = db.prepare('SELECT * FROM foods WHERE id = ?').get(req.params.id)

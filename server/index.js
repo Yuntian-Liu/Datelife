@@ -5,6 +5,7 @@ const path = require('path')
 const { getDb } = require('./lib/db')
 const foodsRouter = require('./routes/foods')
 const barcodeRouter = require('./routes/barcode')
+const authRouter = require('./routes/auth')
 
 const app = express()
 const PORT = process.env.PORT || 3000
@@ -19,6 +20,7 @@ getDb()
 // 路由
 app.use('/api/foods', foodsRouter)
 app.use('/api/barcode', barcodeRouter)
+app.use('/api/auth', authRouter)
 
 // 生产环境：serve 前端静态文件
 if (isProd) {
