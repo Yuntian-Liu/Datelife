@@ -4,6 +4,37 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2.5.0-alpha] - 2026-05-20
+
+### Added
+
+- Full-screen scan page (ScanView) — camera no longer embedded in form
+- Scan timeout hint after 10s with retry / go back options
+- QR code batch print page (QRCodesView)
+- 5-tab bottom navigation: Home / Foods / QR Codes / Scan / Settings
+- Desktop navigation header (DesktopHeader)
+- Diagnostic log system: API call tracking, route tracking, one-tap export
+- Shelf life unit switching: days / weeks / months
+- Detail page displays shelf life in original input unit
+- Dev environment real JWT mock login (`/api/auth/dev-login`)
+
+### Changed
+
+- Mobile food cards now have inline edit/delete icon buttons
+- Settings page layout reordered: Data Management above About
+- About section reordered: Version → User Agreement → Privacy Policy → Export Logs
+- Home page redesigned as dashboard: stat cards + expiring soon list + quick links
+- Scan page UI refined to match overall design language
+- Scan page automatically restores add/edit form on return
+
+### Fixed
+
+- Desktop "+" add button not working on non-/foods pages
+- Scan page back button unresponsive when camera not yet initialized
+- Barcode scanning performance — added format filter list + BarcodeDetector API
+
+---
+
 ## [2.1.5-alpha] - 2026-05-20
 
 ### Fixed

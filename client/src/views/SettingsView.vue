@@ -1,11 +1,12 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { foods } from '../utils/api'
+import { foods, auth } from '../utils/api'
 import { useAuth } from '../composables/useAuth'
 import { useConfirm } from '../composables/useConfirm'
 import { USER_AGREEMENT_HTML, PRIVACY_POLICY_HTML } from '../utils/agreement'
 import { getBadge } from '../utils/badges'
+import { logger } from '../utils/logger'
 
 const router = useRouter()
 const { user, isAuthenticated, setAuth, logout } = useAuth()
@@ -19,7 +20,9 @@ const importing = ref(false)
 const fileInput = ref(null)
 
 async function exportData() {
+  logger.info('export', '开始导出数据')
   const list = await foods.getAll()
+  logger.info('export', `导出 ${list.length} 条食品`)
   const data = {
     version: '1.0',
     exportDate: new Date().toISOString(),
@@ -37,6 +40,20 @@ async function exportData() {
   URL.revokeObjectURL(url)
 }
 
+function exportDiagnosticLogs() {
+  const logData = {
+    system: logger.getSystemInfo(),
+    logs: logger.getLogs()
+  }
+  const blob = new Blob([JSON.stringify(logData, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `datelife-debug-${new Date().toISOString().slice(0, 10)}.json`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
 function triggerImport() {
   fileInput.value?.click()
 }
@@ -49,6 +66,7 @@ async function handleImport(event) {
 
   importing.value = true
   try {
+    logger.info('import', '开始导入数据', { fileName: file.name, fileSize: file.size })
     const text = await new Promise((resolve, reject) => {
       const reader = new FileReader()
       reader.onload = () => resolve(reader.result)
@@ -58,19 +76,24 @@ async function handleImport(event) {
 
     let data
     try { data = JSON.parse(text) } catch {
+      logger.error('import', 'JSON 解析失败')
       alert('文件格式错误，请选择有效的 Datelife 备份文件')
       return
     }
 
     if (!data.version || !Array.isArray(data.foods)) {
+      logger.error('import', '无效的备份格式', { hasVersion: !!data.version, hasFoods: !!data.foods })
       alert('不是有效的 Datelife 备份文件')
       return
     }
 
     if (data.foods.length === 0) {
+      logger.warn('import', '备份文件为空')
       alert('备份文件中没有食品数据')
       return
     }
+
+    logger.info('import', `准备导入 ${data.foods.length} 条食品`)
 
     const confirmed = await showConfirm({
       title: '导入数据',
@@ -78,15 +101,19 @@ async function handleImport(event) {
       confirmText: '导入',
       cancelText: '取消'
     })
-    if (!confirmed) return
+    if (!confirmed) { logger.info('import', '用户取消导入'); return }
 
     // 去重：获取现有数据
     const existing = await foods.getAll()
+    logger.info('import', `当前已有 ${existing.length} 条食品，进行去重检查`)
     const existingKeys = new Set(existing.map(f => f.name + '|' + f.produce_date))
 
     let success = 0, fail = 0, skipped = 0
     for (const item of data.foods) {
-      if (!item.name || !item.produce_date || !item.shelf_life_days) { fail++; continue }
+      if (!item.name || !item.produce_date || !item.shelf_life_days) {
+        logger.warn('import', '跳过无效条目', item)
+        fail++; continue
+      }
       const key = item.name + '|' + item.produce_date
       if (existingKeys.has(key)) { skipped++; continue }
       try {
@@ -99,17 +126,27 @@ async function handleImport(event) {
         })
         success++
         existingKeys.add(key)
-      } catch { fail++ }
+      } catch (e) {
+        logger.error('import', `创建食品失败: ${item.name}`, e.message)
+        fail++
+        // 401 表示登录过期，立即中止
+        if (e.message === '请先登录' || e.message.includes('登录已过期')) {
+          alert('登录已过期，请重新登录后再导入')
+          break
+        }
+      }
     }
 
     const list = await foods.getAll()
     foodCount.value = list.length
 
+    logger.info('import', `导入完成: 成功${success}, 跳过${skipped}, 失败${fail}`)
     const parts = [`成功 ${success} 条`]
     if (skipped > 0) parts.push(`跳过 ${skipped} 条重复`)
     if (fail > 0) parts.push(`失败 ${fail} 条`)
     alert(`导入完成：${parts.join('，')}`)
   } catch (e) {
+    logger.error('import', '导入异常', e.message)
     alert('导入失败：' + e.message)
   } finally {
     importing.value = false
@@ -155,10 +192,15 @@ const agreementContent = computed(() =>
 
 // 开发模式：模拟登录
 const isDev = import.meta.env.DEV
-function mockLogin() {
-  const mockUser = { uid: 100000, nickname: '碳碳', email: 'test@datelife.app', avatar_seed: 'tantan', badge: 'developer', bio: '好好吃饭，不浪费' }
-  setAuth('dev-mock-token', mockUser)
-  foodCount.value = 12
+async function mockLogin() {
+  try {
+    const { token, user } = await auth.devLogin(100000)
+    setAuth(token, user)
+    const list = await foods.getAll()
+    foodCount.value = list.length
+  } catch (e) {
+    alert('模拟登录失败：' + e.message)
+  }
 }
 
 onMounted(async () => {
@@ -367,53 +409,6 @@ onMounted(async () => {
           </div>
         </div>
 
-        <!-- 关于 -->
-        <div>
-          <h3 class="text-sm font-semibold text-gray-400 px-1 mb-2">关于</h3>
-          <div class="bg-white rounded-2xl shadow-sm border border-gray-100/80 overflow-hidden">
-            <!-- 当前版本（置顶） -->
-            <div class="flex items-center gap-3 px-4 py-3.5">
-              <div class="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
-                <svg class="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4 16.5" />
-                </svg>
-              </div>
-              <span class="flex-1 text-sm font-medium text-gray-700">当前版本</span>
-              <span class="text-sm text-gray-400">v2.1.5-alpha</span>
-            </div>
-
-            <div class="border-t border-gray-100 mx-4"></div>
-
-            <div @click="openAgreement('agreement')"
-              class="flex items-center gap-3 px-4 py-3.5 active:bg-gray-50 transition cursor-pointer">
-              <div class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
-                <svg class="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-                </svg>
-              </div>
-              <span class="flex-1 text-sm font-medium text-gray-700">用户协议</span>
-              <svg class="w-4 h-4 text-gray-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-              </svg>
-            </div>
-
-            <div class="border-t border-gray-100 mx-4"></div>
-
-            <div @click="openAgreement('privacy')"
-              class="flex items-center gap-3 px-4 py-3.5 active:bg-gray-50 transition cursor-pointer">
-              <div class="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
-                <svg class="w-5 h-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.214088 15 15 10.5m2.25 4.5H6.75A2.25 2.25 0 014.5 12.75V6A2.25 2.25 0 016.75 3.75h10.5A2.25 2.25 0 0119.5 6v6.75a2.25 2.25 0 01-2.25 2.25z" />
-                </svg>
-              </div>
-              <span class="flex-1 text-sm font-medium text-gray-700">隐私政策</span>
-              <svg class="w-4 h-4 text-gray-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-              </svg>
-            </div>
-          </div>
-        </div>
-
         <!-- 数据管理 -->
         <div>
           <h3 class="text-sm font-semibold text-gray-400 px-1 mb-2">数据管理</h3>
@@ -450,6 +445,69 @@ onMounted(async () => {
           </div>
           <!-- 隐藏文件选择器 -->
           <input ref="fileInput" type="file" accept=".json" @change="handleImport" class="hidden" />
+        </div>
+
+        <!-- 关于 -->
+        <div>
+          <h3 class="text-sm font-semibold text-gray-400 px-1 mb-2">关于</h3>
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-100/80 overflow-hidden">
+            <!-- 当前版本 -->
+            <div class="flex items-center gap-3 px-4 py-3.5">
+              <div class="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
+                <svg class="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4 16.5" />
+                </svg>
+              </div>
+              <span class="flex-1 text-sm font-medium text-gray-700">当前版本</span>
+              <span class="text-sm text-gray-400">v{{ __APP_VERSION__ }}</span>
+            </div>
+
+            <div class="border-t border-gray-100 mx-4"></div>
+
+            <div @click="openAgreement('agreement')"
+              class="flex items-center gap-3 px-4 py-3.5 active:bg-gray-50 transition cursor-pointer">
+              <div class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+                <svg class="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                </svg>
+              </div>
+              <span class="flex-1 text-sm font-medium text-gray-700">用户协议</span>
+              <svg class="w-4 h-4 text-gray-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+
+            <div class="border-t border-gray-100 mx-4"></div>
+
+            <div @click="openAgreement('privacy')"
+              class="flex items-center gap-3 px-4 py-3.5 active:bg-gray-50 transition cursor-pointer">
+              <div class="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
+                <svg class="w-5 h-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.214088 15 15 10.5m2.25 4.5H6.75A2.25 2.25 0 014.5 12.75V6A2.25 2.25 0 016.75 3.75h10.5A2.25 2.25 0 0119.5 6v6.75a2.25 2.25 0 01-2.25 2.25z" />
+                </svg>
+              </div>
+              <span class="flex-1 text-sm font-medium text-gray-700">隐私政策</span>
+              <svg class="w-4 h-4 text-gray-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+
+            <div class="border-t border-gray-100 mx-4"></div>
+
+            <div @click="exportDiagnosticLogs"
+              class="flex items-center gap-3 px-4 py-3.5 active:bg-gray-50 transition cursor-pointer">
+              <div class="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
+                <svg class="w-5 h-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                </svg>
+              </div>
+              <span class="flex-1 text-sm font-medium text-gray-700">导出诊断日志</span>
+              <span class="text-xs text-gray-400">用于排查问题</span>
+              <svg class="w-4 h-4 text-gray-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </div>
         </div>
 
         <!-- 账号与安全（退出登录放最后） -->

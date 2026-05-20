@@ -54,7 +54,7 @@ router.get('/:id', (req, res) => {
 
 // 新增食品（需要登录）
 router.post('/', authRequired, (req, res) => {
-  const { name, barcode, produce_date, shelf_life_days, category } = req.body
+  const { name, barcode, produce_date, shelf_life_days, shelf_life_unit, category } = req.body
   if (!name || !produce_date || !shelf_life_days) {
     return res.status(400).json({ error: '名称、生产日期、保质期天数必填' })
   }
@@ -62,9 +62,9 @@ router.post('/', authRequired, (req, res) => {
   const expire_date = calcExpireDate(produce_date, shelf_life_days)
   const db = getDb()
   const result = db.prepare(`
-    INSERT INTO foods (user_id, name, barcode, produce_date, shelf_life_days, expire_date, category)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `).run(req.user.uid, name, barcode || null, produce_date, shelf_life_days, expire_date, category || null)
+    INSERT INTO foods (user_id, name, barcode, produce_date, shelf_life_days, shelf_life_unit, expire_date, category)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(req.user.uid, name, barcode || null, produce_date, shelf_life_days, shelf_life_unit || '天', expire_date, category || null)
 
   const food = db.prepare('SELECT * FROM foods WHERE id = ?').get(result.lastInsertRowid)
   res.status(201).json(attachStatus(food))
@@ -81,13 +81,14 @@ router.put('/:id', authRequired, (req, res) => {
   const barcode = req.body.barcode ?? existing.barcode
   const produce_date = req.body.produce_date ?? existing.produce_date
   const shelf_life_days = req.body.shelf_life_days ?? existing.shelf_life_days
+  const shelf_life_unit = req.body.shelf_life_unit ?? existing.shelf_life_unit ?? '天'
   const category = req.body.category ?? existing.category
   const expire_date = calcExpireDate(produce_date, shelf_life_days)
 
   db.prepare(`
-    UPDATE foods SET name=?, barcode=?, produce_date=?, shelf_life_days=?, expire_date=?, category=?, updated_at=datetime('now','localtime')
+    UPDATE foods SET name=?, barcode=?, produce_date=?, shelf_life_days=?, shelf_life_unit=?, expire_date=?, category=?, updated_at=datetime('now','localtime')
     WHERE id=?
-  `).run(name, barcode, produce_date, shelf_life_days, expire_date, category, req.params.id)
+  `).run(name, barcode, produce_date, shelf_life_days, shelf_life_unit, expire_date, category, req.params.id)
 
   const food = db.prepare('SELECT * FROM foods WHERE id = ?').get(req.params.id)
   res.json(attachStatus(food))

@@ -68,6 +68,13 @@ function initTables() {
   } catch (e) {
     // 列已存在，忽略错误
   }
+
+  // 给 foods 表添加 shelf_life_unit 列（如果不存在）
+  try {
+    db.prepare("ALTER TABLE foods ADD COLUMN shelf_life_unit TEXT DEFAULT '天'").run()
+  } catch (e) {
+    // 列已存在，忽略错误
+  }
 }
 
 function getNextUid() {

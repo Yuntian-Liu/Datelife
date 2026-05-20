@@ -201,4 +201,32 @@ router.put('/profile', authRequired, (req, res) => {
   res.json(updated)
 })
 
+// POST /api/auth/dev-login — 开发模式模拟登录（仅非生产环境可用）
+router.post('/dev-login', (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ error: 'Not found' })
+  }
+  const db = getDb()
+  const { uid = 100000 } = req.body
+
+  let user = db.prepare(
+    'SELECT id, uid, email, nickname, avatar_seed, bio, is_admin, badge FROM users WHERE uid = ?'
+  ).get(uid)
+
+  // 用户不存在则自动创建
+  if (!user) {
+    const nextUid = uid
+    db.prepare(`
+      INSERT INTO users (uid, email, nickname, avatar_seed, bio, is_admin, badge)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(nextUid, 'dev@datelife.app', '碳碳', 'tantan', '好好吃饭，不浪费', 0, 'developer')
+    user = db.prepare(
+      'SELECT id, uid, email, nickname, avatar_seed, bio, is_admin, badge FROM users WHERE uid = ?'
+    ).get(nextUid)
+  }
+
+  const token = sign({ uid: user.uid, email: user.email })
+  res.json({ token, user })
+})
+
 module.exports = router

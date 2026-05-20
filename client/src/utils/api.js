@@ -1,6 +1,9 @@
+import { logger } from './logger'
+
 const BASE = '/api'
 
 async function request(url, options = {}) {
+  const method = options.method || 'GET'
   const headers = { 'Content-Type': 'application/json', ...options.headers }
   const savedToken = localStorage.getItem('token')
   if (savedToken) headers['Authorization'] = `Bearer ${savedToken}`
@@ -11,12 +14,16 @@ async function request(url, options = {}) {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     window.__auth_expired = true
+    logger.warn('api', `401 Unauthorized: ${method} ${url}`)
   }
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: '请求失败' }))
+    logger.error('api', `失败: ${method} ${url} (${res.status})`, err.error)
     throw new Error(err.error)
   }
+
+  logger.info('api', `${method} ${url} → ${res.status}`)
   return res.json()
 }
 
@@ -54,5 +61,9 @@ export const auth = {
   updateProfile: (data) => request('/auth/profile', {
     method: 'PUT',
     body: JSON.stringify(data)
+  }),
+  devLogin: (uid) => request('/auth/dev-login', {
+    method: 'POST',
+    body: JSON.stringify({ uid })
   })
 }

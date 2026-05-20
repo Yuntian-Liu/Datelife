@@ -3,6 +3,7 @@ import { ref, onMounted, watch, computed, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { foods } from '../utils/api'
 import { useConfirm } from '../composables/useConfirm'
+import { logger } from '../utils/logger'
 
 const route = useRoute()
 const router = useRouter()
@@ -22,6 +23,7 @@ async function loadFood() {
     food.value = data
     qrKey.value = Date.now()
   } catch (e) {
+    logger.error('detail', '加载食品失败', { id: route.params.id, error: e.message })
     error.value = e.message || '加载失败'
   } finally {
     loading.value = false
@@ -47,6 +49,14 @@ function statusText(f) {
   if (f.status === 'expired') return 'text-red-600 bg-red-50'
   if (f.status === 'expiring') return 'text-yellow-600 bg-yellow-50'
   return 'text-primary-600 bg-primary-50'
+}
+
+function shelfLifeDisplay(f) {
+  const days = f.shelf_life_days
+  const unit = f.shelf_life_unit || '天'
+  if (unit === '周') return (days / 7) + ' 周'
+  if (unit === '月') return (days / 30) + ' 月'
+  return days + ' 天'
 }
 
 function daysColor(f) {
@@ -77,6 +87,7 @@ async function handleDelete() {
   })
   if (!confirmed) return
   await foods.delete(food.id)
+  logger.info('detail', '删除食品', { id: food.id })
   router.push('/')
 }
 </script>
@@ -117,7 +128,7 @@ async function handleDelete() {
             </div>
             <div class="flex justify-between py-4">
               <span class="text-gray-400">保质期</span>
-              <span class="text-gray-700 font-medium">{{ food.shelf_life_days }} 天</span>
+              <span class="text-gray-700 font-medium">{{ shelfLifeDisplay(food) }}</span>
             </div>
             <div class="flex justify-between py-4">
               <span class="text-gray-400">过期日期</span>
@@ -179,7 +190,7 @@ async function handleDelete() {
             </div>
             <div class="flex justify-between py-3">
               <span class="text-gray-400">保质期</span>
-              <span class="text-gray-700">{{ food.shelf_life_days }} 天</span>
+              <span class="text-gray-700">{{ shelfLifeDisplay(food) }}</span>
             </div>
             <div class="flex justify-between py-3">
               <span class="text-gray-400">过期日期</span>

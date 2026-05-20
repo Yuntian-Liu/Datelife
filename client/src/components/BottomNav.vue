@@ -28,8 +28,32 @@ const badge = computed(() => getBadge(user.value?.badge))
           <span class="text-xs font-semibold">首页</span>
         </router-link>
 
+        <!-- 食品 -->
+        <router-link
+          to="/foods"
+          class="flex flex-col items-center gap-0.5 text-gray-400 hover:text-primary-500 transition px-4 py-1"
+          active-class="!text-primary-500"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+          </svg>
+          <span class="text-xs font-semibold">食品</span>
+        </router-link>
+
         <!-- 中间占位，给凸起按钮留空间 -->
         <div class="w-14"></div>
+
+        <!-- 二维码 -->
+        <router-link
+          to="/qrcodes"
+          class="flex flex-col items-center gap-0.5 text-gray-400 hover:text-primary-500 transition px-4 py-1"
+          active-class="!text-primary-500"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM14.25 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM3.75 14.25c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM14.25 14.25c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5z" />
+          </svg>
+          <span class="text-xs font-semibold">二维码</span>
+        </router-link>
 
         <router-link
           to="/settings"

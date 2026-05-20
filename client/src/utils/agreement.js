@@ -1,7 +1,7 @@
 export const USER_AGREEMENT_HTML = `
 <div class="space-y-4">
   <h3 class="text-base font-semibold text-gray-800">一、服务描述</h3>
-  <p>Datelife（"食品日期管理"）是一款用于帮助用户管理食品保质期的在线工具。主要功能包括：录入食品的生产日期和保质期、自动计算过期时间并标记状态（正常/临期/过期）、为每个食品生成专属二维码供扫码查看详情等。</p>
+  <p>Datelife（"食品日期管理"）是一款用于帮助用户管理食品保质期的在线工具。主要功能包括：录入食品的生产日期和保质期、自动计算过期时间并标记状态（正常/临期/过期）、通过扫码（条形码/二维码）快速识别和查询食品信息、为每个食品生成专属二维码供扫码查看详情、数据的导入与导出备份等。</p>
 
   <h3 class="text-base font-semibold text-gray-800">二、用户账号</h3>
   <p>使用 Datelife 的云端同步功能需要注册账号。账号安全由用户自行负责，包括但不限于：保管登录密码、不向他人泄露验证码、及时退出公共设备上的登录状态等。Datelife 不会以任何理由主动询问您的密码。</p>
@@ -12,6 +12,8 @@ export const USER_AGREEMENT_HTML = `
     <li>利用本平台进行任何非法活动</li>
     <li>对本平台进行技术攻击或干扰（包括但不限于：暴力破解、DDoS 攻击、爬取数据）</li>
     <li>批量注册虚假账号</li>
+    <li>滥用扫码功能进行未经授权的批量采集</li>
+    <li>导入包含恶意代码或异常格式的备份文件</li>
     <li>录入违反法律法规的食品信息或内容</li>
     <li>利用本平台传播有害信息</li>
   </ul>
@@ -36,7 +38,7 @@ export const USER_AGREEMENT_HTML = `
   <h3 class="text-base font-semibold text-gray-800">八、适用法律</h3>
   <p>本协议的解释、效力及纠纷解决均适用中华人民共和国法律。</p>
 </div>
-<p class="text-xs text-gray-400 mt-4 pt-3 border-t border-gray-200">最后更新：2026 年 5 月 19 日</p>
+<p class="text-xs text-gray-400 mt-4 pt-3 border-t border-gray-200">最后更新：2026 年 5 月 20 日</p>
 `
 
 export const PRIVACY_POLICY_HTML = `
@@ -45,9 +47,12 @@ export const PRIVACY_POLICY_HTML = `
   <p>为了提供 Datelife 服务，我们会收集以下信息：</p>
   <ul class="list-disc pl-5 space-y-1">
     <li><strong>账号信息</strong>：邮箱地址、昵称、头像种子</li>
-    <li><strong>业务数据</strong>：您录入的食品名称、生产日期、保质期等数据</li>
+    <li><strong>业务数据</strong>：您录入的食品名称、生产日期、保质期、条形码等数据</li>
+    <li><strong>设备权限</strong>：扫码功能需要临时调用摄像头。摄像头仅在扫码期间使用，<strong>不会存储、录制或传输任何图像数据</strong></li>
   </ul>
   <p><strong>我们不会收集</strong>：真实姓名、身份证号、手机号码、位置信息等敏感个人信息。</p>
+
+  <p><strong>诊断日志</strong>：应用中包含一个本地诊断日志系统，记录应用运行状态、API 调用、路由跳转等非敏感信息。日志<strong>仅存储在您的浏览器本地</strong>，不会自动上传。只有在您主动使用「导出诊断日志」功能并手动发送给我们时，我们才能获取这些日志用于问题排查。日志内容不包含密码、完整条码数据等敏感信息。</p>
 
   <h3 class="text-base font-semibold text-gray-800">二、信息使用</h3>
   <p>收集的信息仅用于以下目的：</p>
@@ -110,5 +115,5 @@ export const PRIVACY_POLICY_HTML = `
   <h3 class="text-base font-semibold text-gray-800">十、政策更新</h3>
   <p>当本隐私政策发生重大变更时，我们将在应用内显著位置发布更新通知。建议您定期查阅本政策以了解最新信息。</p>
 </div>
-<p class="text-xs text-gray-400 mt-4 pt-3 border-t border-gray-200">最后更新：2026 年 5 月 19 日</p>
+<p class="text-xs text-gray-400 mt-4 pt-3 border-t border-gray-200">最后更新：2026 年 5 月 20 日</p>
 `
