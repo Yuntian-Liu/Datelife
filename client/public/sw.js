@@ -5,7 +5,8 @@ const APP_SHELL = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/favicon.svg'
+  '/icon-192.png',
+  '/icon-512.png'
 ]
 
 // Install: 预缓存核心资源
