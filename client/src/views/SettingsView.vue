@@ -175,18 +175,7 @@ onMounted(async () => {
 
 <template>
   <div class="min-h-screen bg-bg">
-    <!-- Header -->
-    <header class="bg-white/80 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-10">
-      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4">
-        <button @click="router.push('/')"
-          class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-primary-600 bg-gray-100 hover:bg-primary-50 px-4 py-2 rounded-full transition font-medium">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
-          返回首页
-        </button>
-      </div>
-    </header>
-
-    <main class="max-w-lg mx-auto px-4 py-6 space-y-4">
+    <main class="max-w-lg mx-auto px-4 py-8 pb-28 md:pb-8 space-y-4">
 
       <!-- 开发模式：模拟登录按钮 -->
       <button v-if="isDev && !isAuthenticated" @click="mockLogin"
@@ -383,7 +372,7 @@ onMounted(async () => {
                 </svg>
               </div>
               <span class="flex-1 text-sm font-medium text-gray-700">当前版本</span>
-              <span class="text-sm text-gray-400">v2.1.3-alpha</span>
+              <span class="text-sm text-gray-400">v2.1.4-alpha</span>
             </div>
 
             <div class="border-t border-gray-100 mx-4"></div>

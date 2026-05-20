@@ -8,7 +8,7 @@ import Watermark from './components/Watermark.vue'
 const route = useRoute()
 const { user, isAuthenticated } = useAuth()
 
-const showNav = computed(() => route.path === '/')
+const showNav = computed(() => ['/', '/settings'].includes(route.path))
 
 const showAddForm = ref(false)
 provide('showAddForm', showAddForm)

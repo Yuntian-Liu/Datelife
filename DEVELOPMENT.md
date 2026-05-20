@@ -432,6 +432,9 @@ cd client && npm run dev
 ### 2026-05-20
 
 - **v2.1.0-alpha 发布**：设置页重构 + 数据管理 + PWA 支持
+- **v2.1.4-alpha 发布**：
+  - 品牌字体切换（Playfair Display + Noto Serif SC）
+  - 设置页去 Header，导航栏扩展
 - **v2.1.3-alpha 发布**：
   - 设置页交互重构 — 去内联编辑，新增编辑资料二级页面
   - 头像修改功能 — 9 宫格选择器

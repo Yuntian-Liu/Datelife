@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2.1.4-alpha] - 2026-05-20
+
+### Changed
+
+- Brand font switched to Playfair Display + Noto Serif SC — elegant English serif + refined Chinese Song
+- Settings page header removed — navigation via BottomNav now covers / and /settings
+- Settings page bottom padding added — prevents BottomNav from covering content
+
+---
+
 ## [2.1.3-alpha] - 2026-05-20
 
 ### Added

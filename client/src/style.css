@@ -21,5 +21,6 @@ body {
 }
 
 .font-brand {
-  font-family: 'LXGW WenKai', cursive;
+  font-family: 'Playfair Display', 'Noto Serif SC', serif;
+  font-feature-settings: 'lnum';
 }
