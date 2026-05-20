@@ -1,6 +1,11 @@
 const API_KEY = process.env.RESEND_API_KEY
 
 async function sendVerificationCode(email, code) {
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`\n[Dev] 验证码: ${code} (收件人: ${email})\n`)
+    return { id: 'dev-skip' }
+  }
+
   if (!API_KEY) throw new Error('RESEND_API_KEY 未配置')
 
   const res = await fetch('https://api.resend.com/emails', {

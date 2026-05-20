@@ -129,7 +129,7 @@ const agreementType = ref('agreement')
 
 const avatarUrl = computed(() => {
   if (!user.value?.avatar_seed) return ''
-  return `https://api.dicebear.com/7.x/thumbs/svg?seed=${user.value.avatar_seed}`
+  return `https://api.dicebear.com/7.x/lorelei/svg?seed=${user.value.avatar_seed}`
 })
 
 const badge = computed(() => getBadge(user.value?.badge))
@@ -428,7 +428,7 @@ onMounted(async () => {
                 </svg>
               </div>
               <span class="flex-1 text-sm font-medium text-gray-700">当前版本</span>
-              <span class="text-sm text-gray-400">v2.1.1-alpha</span>
+              <span class="text-sm text-gray-400">v2.1.2-alpha</span>
             </div>
 
             <div class="border-t border-gray-100 mx-4"></div>

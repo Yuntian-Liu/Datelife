@@ -7,7 +7,7 @@ const { user, isAuthenticated } = inject('auth', { user: computed(() => null), i
 
 const avatarUrl = computed(() => {
   if (!user.value?.avatar_seed) return ''
-  return `https://api.dicebear.com/7.x/thumbs/svg?seed=${user.value.avatar_seed}`
+  return `https://api.dicebear.com/7.x/lorelei/svg?seed=${user.value.avatar_seed}`
 })
 
 const badge = computed(() => getBadge(user.value?.badge))

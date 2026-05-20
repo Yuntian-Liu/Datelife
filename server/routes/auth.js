@@ -117,7 +117,7 @@ router.post('/login-password', (req, res) => {
 
 // POST /api/auth/register — 注册（新用户填完昵称密码后）
 router.post('/register', (req, res) => {
-  const { email, code, nickname, password } = req.body
+  const { email, code, nickname, password, bio, avatar_seed: clientAvatarSeed } = req.body
   if (!email || !code || !nickname || !password) {
     return res.status(400).json({ error: '所有字段都不能为空' })
   }
@@ -141,14 +141,14 @@ router.post('/register', (req, res) => {
 
   // 创建用户
   const uid = getNextUid()
-  const avatar_seed = 'user-' + crypto.randomBytes(4).toString('hex')
+  const avatar_seed = clientAvatarSeed || ('user-' + crypto.randomBytes(4).toString('hex'))
   const salt = generateSalt()
   const passwordHash = hashPassword(password, salt)
 
   db.prepare(`
-    INSERT INTO users (uid, email, nickname, avatar_seed, password_hash, salt)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `).run(uid, email, nickname, avatar_seed, passwordHash, salt)
+    INSERT INTO users (uid, email, nickname, avatar_seed, bio, password_hash, salt)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(uid, email, nickname, avatar_seed, bio || '', passwordHash, salt)
 
   // 清除验证码
   db.prepare('DELETE FROM verification_codes WHERE email = ?').run(email)

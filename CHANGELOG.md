@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2.1.2-alpha] - 2026-05-20
+
+### Added
+
+- 5-step registration wizard — email verification → password → avatar selection → profile → success page
+- 9-grid avatar selector with Lorelei style and "refresh" button
+- Bio field during registration
+- Registration success page with UID display and confetti animation
+
+### Changed
+
+- Avatar style switched from DiceBear `thumbs` to `lorelei`
+- Dev mode auto-bypasses Turnstile human verification (frontend + backend)
+- Dev mode verification code logged to console instead of calling Resend API
+
+---
+
 ## [2.1.1-alpha] - 2026-05-20
 
 ### Added

@@ -238,7 +238,7 @@ function statusBorder(food) {
           <router-link to="/settings"
             class="hidden md:inline-flex items-center justify-center gap-1.5 text-gray-500 hover:text-primary-500 px-3 py-2 rounded-xl hover:bg-primary-50 transition text-sm font-medium transition">
             <div v-if="user?.avatar_seed" class="relative">
-              <img :src="`https://api.dicebear.com/7.x/thumbs/svg?seed=${user.avatar_seed}`"
+              <img :src="`https://api.dicebear.com/7.x/lorelei/svg?seed=${user.avatar_seed}`"
                 class="w-7 h-7 rounded-full bg-primary-100" alt="头像" />
               <span v-if="badge" class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border border-white shadow-sm"
                 :class="badge?.label === '开发者' ? 'bg-amber-400' : badge?.label === '内测' ? 'bg-emerald-400' : 'bg-violet-400'"></span>

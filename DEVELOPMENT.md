@@ -432,6 +432,10 @@ cd client && npm run dev
 ### 2026-05-20
 
 - **v2.1.0-alpha 发布**：设置页重构 + 数据管理 + PWA 支持
+- **v2.1.2-alpha 发布**：
+  - 注册流程升级为 5 步向导（头像选择 + 个性签名 + 成功页）
+  - 头像风格从 thumbs 切换为 lorelei
+  - 开发模式自动跳过 Turnstile 和邮件发送
 - **v2.1.1-alpha 发布**：
   - 修复 PC 端登录后导航栏按钮靠左问题（ml-auto）
   - 新增全屏开发水印组件（Watermark.vue + SVG Data URI 平铺）

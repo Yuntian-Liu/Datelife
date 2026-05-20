@@ -46,9 +46,9 @@ export const auth = {
     method: 'POST',
     body: JSON.stringify({ email, password })
   }),
-  register: (email, code, nickname, password) => request('/auth/register', {
+  register: (email, code, nickname, password, avatarSeed, bio) => request('/auth/register', {
     method: 'POST',
-    body: JSON.stringify({ email, code, nickname, password })
+    body: JSON.stringify({ email, code, nickname, password, avatar_seed: avatarSeed, bio })
   }),
   getProfile: () => request('/auth/profile'),
   updateProfile: (data) => request('/auth/profile', {

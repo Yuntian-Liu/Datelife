@@ -1,6 +1,8 @@
 const SECRET = process.env.TURNSTILE_SECRET_KEY
 
 async function requireTurnstile(req, res, next) {
+  if (process.env.NODE_ENV !== 'production') return next()
+
   const token = req.headers['cf-turnstile-response']
   if (!token) {
     return res.status(400).json({ error: '请完成人机验证' })
