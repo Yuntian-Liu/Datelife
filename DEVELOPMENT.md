@@ -428,3 +428,11 @@ cd client && npm run dev
   - 底部导航 + PC Header 头像右上角小圆点标记
   - 运维操作：SQL 一条命令即可给任意用户添加/修改/移除徽章
 - **Zeabur 持久化卷配置完成**：挂载路径 /app/server/data
+
+### 2026-05-20
+
+- **v2.1.0-alpha 发布**：设置页重构 + 数据管理 + PWA 支持
+- **v2.1.1-alpha 发布**：
+  - 修复 PC 端登录后导航栏按钮靠左问题（ml-auto）
+  - 新增全屏开发水印组件（Watermark.vue + SVG Data URI 平铺）
+  - 新增 client/.env 前端环境变量支持（VITE_ENABLE_WATERMARK 开关）

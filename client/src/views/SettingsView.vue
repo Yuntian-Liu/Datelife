@@ -428,7 +428,7 @@ onMounted(async () => {
                 </svg>
               </div>
               <span class="flex-1 text-sm font-medium text-gray-700">当前版本</span>
-              <span class="text-sm text-gray-400">v2.1.0-alpha</span>
+              <span class="text-sm text-gray-400">v2.1.1-alpha</span>
             </div>
 
             <div class="border-t border-gray-100 mx-4"></div>

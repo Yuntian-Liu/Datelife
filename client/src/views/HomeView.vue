@@ -230,7 +230,7 @@ function statusBorder(food) {
         <h1 class="text-2xl font-bold text-gray-800 font-brand tracking-wide">Datelife</h1>
 
         <!-- 已登录：登录按钮 | 已登录：添加 + 设置 -->
-        <div v-if="isAuthenticated" class="flex items-center gap-2">
+        <div v-if="isAuthenticated" class="flex items-center gap-2 ml-auto">
           <button @click="openAdd"
             class="hidden md:inline-flex bg-primary-500 hover:bg-primary-600 text-white px-5 py-2.5 rounded-full text-sm font-semibold transition shadow-md hover:shadow-lg active:scale-95">
             + 添加食品

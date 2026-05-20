@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2.1.1-alpha] - 2026-05-20
+
+### Added
+
+- Full-screen dev watermark — diagonal tiling with "Preview" label + site URL, prevents screenshot leaks
+- Watermark toggle via `VITE_ENABLE_WATERMARK` env var in `client/.env`, one-click disable for production
+- Gitignore whitelist for `client/.env` (non-sensitive frontend config only)
+
+### Fixed
+
+- PC header alignment — logged-in "Add Food" + avatar now right-aligned with `ml-auto`
+
+---
+
 ## [2.1.0-alpha] - 2026-05-20
 
 ### Added

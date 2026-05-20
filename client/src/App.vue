@@ -3,6 +3,7 @@ import { computed, provide, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuth } from './composables/useAuth'
 import BottomNav from './components/BottomNav.vue'
+import Watermark from './components/Watermark.vue'
 
 const route = useRoute()
 const { user, isAuthenticated } = useAuth()
@@ -18,5 +19,6 @@ provide('auth', { user, isAuthenticated })
   <div class="min-h-screen bg-bg font-body">
     <router-view />
     <BottomNav v-if="showNav" @add="showAddForm = true" />
+    <Watermark />
   </div>
 </template>
