@@ -432,6 +432,8 @@ cd client && npm run dev
 ### 2026-05-20
 
 - **v2.1.0-alpha 发布**：设置页重构 + 数据管理 + PWA 支持
+- **v2.1.5-alpha 发布**：
+  - PC 端返回按钮 + scrollbar-gutter 修复导航栏跳动
 - **v2.1.4-alpha 发布**：
   - 品牌字体切换（Playfair Display + Noto Serif SC）
   - 设置页去 Header，导航栏扩展

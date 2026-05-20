@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2.1.5-alpha] - 2026-05-20
+
+### Fixed
+
+- PC settings page missing back button — added desktop-only "返回首页" link
+- Nav bar jumping when switching pages — `scrollbar-gutter: stable` reserves scrollbar space
+
+---
+
 ## [2.1.4-alpha] - 2026-05-20
 
 ### Changed

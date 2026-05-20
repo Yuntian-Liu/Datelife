@@ -1,5 +1,5 @@
 // ==================== Datelife Service Worker ====================
-const CACHE_NAME = 'datelife-v214a'
+const CACHE_NAME = 'datelife-v215a'
 
 const APP_SHELL = [
   '/',

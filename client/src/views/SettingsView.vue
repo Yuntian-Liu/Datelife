@@ -176,6 +176,13 @@ onMounted(async () => {
 <template>
   <div class="min-h-screen bg-bg">
     <main class="max-w-lg mx-auto px-4 py-8 pb-28 md:pb-8 space-y-4">
+      <!-- PC端返回按钮 -->
+      <button @click="router.push('/')"
+        class="hidden md:inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-primary-500 transition font-medium mb-2">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+        返回首页
+      </button>
+
 
       <!-- 开发模式：模拟登录按钮 -->
       <button v-if="isDev && !isAuthenticated" @click="mockLogin"
@@ -372,7 +379,7 @@ onMounted(async () => {
                 </svg>
               </div>
               <span class="flex-1 text-sm font-medium text-gray-700">当前版本</span>
-              <span class="text-sm text-gray-400">v2.1.4-alpha</span>
+              <span class="text-sm text-gray-400">v2.1.5-alpha</span>
             </div>
 
             <div class="border-t border-gray-100 mx-4"></div>
