@@ -32,7 +32,9 @@ export const foods = {
   getById: (id) => request(`/foods/${id}`),
   create: (data) => request('/foods', { method: 'POST', body: JSON.stringify(data) }),
   update: (id, data) => request(`/foods/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: (id) => request(`/foods/${id}`, { method: 'DELETE' })
+  delete: (id) => request(`/foods/${id}`, { method: 'DELETE' }),
+  getTags: () => request('/foods/tags'),
+  deleteTag: (name) => request(`/foods/tags/${encodeURIComponent(name)}`, { method: 'DELETE' })
 }
 
 export const barcode = {

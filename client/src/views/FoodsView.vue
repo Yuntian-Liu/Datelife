@@ -5,6 +5,24 @@ import { foods, barcode } from '../utils/api'
 import { useConfirm } from '../composables/useConfirm'
 import { logger } from '../utils/logger'
 
+const TAG_COLORS = ['bg-blue-100 text-blue-700', 'bg-amber-100 text-amber-700', 'bg-green-100 text-green-700', 'bg-purple-100 text-purple-700', 'bg-pink-100 text-pink-700', 'bg-cyan-100 text-cyan-700', 'bg-orange-100 text-orange-700', 'bg-lime-100 text-lime-700']
+const tagColorCache = new Map()
+
+function tagColor(name) {
+  if (tagColorCache.has(name)) return tagColorCache.get(name)
+  const used = [...tagColorCache.values()]
+  let idx = 0
+  for (let i = 0; i < name.length; i++) idx += name.charCodeAt(i)
+  let color = TAG_COLORS[idx % TAG_COLORS.length]
+  // 如果颜色已被占用，找下一个未用的
+  while (used.includes(color)) {
+    idx++
+    color = TAG_COLORS[idx % TAG_COLORS.length]
+  }
+  tagColorCache.set(name, color)
+  return color
+}
+
 const route = useRoute()
 const router = useRouter()
 const showConfirm = useConfirm()
@@ -21,6 +39,14 @@ const searchQuery = ref('')
 const scanStatus = ref('')
 const showScanPicker = ref(false)
 
+// 标签相关
+const tagInput = ref('')
+const formTags = ref([])
+const allTags = ref([])
+const selectedFilterTags = ref([])
+const showTagFilter = ref(false)
+const showTagLimitModal = ref(false)
+
 // 保质期单位切换
 const shelfLifeUnit = ref('天')
 const showUnitPicker = ref(false)
@@ -29,6 +55,41 @@ const unitOptions = ['天', '周', '月']
 function switchUnit(unit) {
   shelfLifeUnit.value = unit
   showUnitPicker.value = false
+}
+
+// 标签输入：回车添加（全局标签上限 8 个）
+function addTag() {
+  const t = tagInput.value.trim()
+  if (!t) return
+  if (!allTags.value.includes(t) && allTags.value.length >= 8) {
+    showTagLimitModal.value = true
+    return
+  }
+  if (formTags.value.includes(t)) return
+  formTags.value.push(t)
+  if (!allTags.value.includes(t)) allTags.value.push(t)
+  tagInput.value = ''
+}
+
+function removeTag(t) {
+  formTags.value = formTags.value.filter(tag => tag !== t)
+}
+
+function addExistingTag(t) {
+  if (formTags.value.includes(t)) return
+  formTags.value.push(t)
+}
+
+// 标签筛选
+function toggleFilterTag(t) {
+  const idx = selectedFilterTags.value.indexOf(t)
+  if (idx >= 0) selectedFilterTags.value.splice(idx, 1)
+  else selectedFilterTags.value.push(t)
+}
+
+function clearTagFilter() {
+  selectedFilterTags.value = []
+  filter.value = 'all'
 }
 
 function unitMultiplier() {
@@ -46,10 +107,18 @@ watch(showAddForm, (val) => {
   }
 })
 
+const availableTags = computed(() => allTags.value.filter(t => !formTags.value.includes(t)))
+
 const filteredList = computed(() => {
   let list = foodList.value
-  if (filter.value !== 'all') {
+  if (filter.value !== 'all' && filter.value !== 'tags') {
     list = list.filter(f => f.status === filter.value)
+  }
+  if (selectedFilterTags.value.length > 0) {
+    list = list.filter(f => {
+      const ft = JSON.parse(f.tags || '[]')
+      return selectedFilterTags.value.some(t => ft.includes(t))
+    })
   }
   if (searchQuery.value) {
     const q = searchQuery.value.toLowerCase()
@@ -61,6 +130,7 @@ const filteredList = computed(() => {
 onMounted(async () => {
   if (isAuthenticated.value) {
     try { foodList.value = await foods.getAll() } catch (e) {}
+    try { allTags.value = await foods.getTags() } catch (e) {}
   }
   loading.value = false
   // 处理从扫码页带回的结果
@@ -139,7 +209,10 @@ function resetForm() {
   form.value = { name: '', produce_date: new Date().toISOString().slice(0, 10), shelf_life_days: '' }
   shelfLifeUnit.value = '天'
   showUnitPicker.value = false
+  formTags.value = []
+  tagInput.value = ''
   editing.value = null
+  showTagLimitModal.value = false
 }
 
 function openAdd() {
@@ -151,6 +224,9 @@ function openAdd() {
 function openEdit(food) {
   editing.value = food.id
   form.value = { name: food.name, produce_date: food.produce_date, shelf_life_days: food.shelf_life_days }
+  let parsed = []
+  try { parsed = JSON.parse(food.tags || '[]') } catch {}
+  formTags.value = Array.isArray(parsed) ? parsed : []
   scanStatus.value = ''
   showForm.value = true
 }
@@ -163,14 +239,15 @@ async function submitForm() {
     shelf_life_days: Number(form.value.shelf_life_days) * unitMultiplier(),
     shelf_life_unit: shelfLifeUnit.value
   }
+  const tagData = { ...data, tags: JSON.stringify(formTags.value) }
   try {
     if (editing.value) {
-      const updated = await foods.update(editing.value, data)
+      const updated = await foods.update(editing.value, tagData)
       const idx = foodList.value.findIndex(f => f.id === editing.value)
       foodList.value[idx] = updated
       logger.info('foods', '更新食品', { id: editing.value, name: data.name, unit: data.shelf_life_unit })
     } else {
-      const created = await foods.create(data)
+      const created = await foods.create(tagData)
       foodList.value.unshift(created)
       logger.info('foods', '创建食品', { id: created.id, name: data.name, unit: data.shelf_life_unit })
     }
@@ -211,21 +288,51 @@ const filterOptions = [
   { key: 'all', label: '全部' },
   { key: 'normal', label: '可食用' },
   { key: 'expiring', label: '临期' },
-  { key: 'expired', label: '已过期' }
+  { key: 'expired', label: '已过期' },
+  { key: 'tags', label: '标签' }
 ]
 </script>
 
 <template>
   <div class="min-h-screen bg-bg">
-    <main class="max-w-6xl mx-auto px-4 sm:px-6 py-6 pb-28 md:pb-6">
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 py-6 pb-28 md:pb-6" @click="showTagFilter = false">
       <!-- 筛选栏 -->
       <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-6">
-        <div class="flex bg-white rounded-xl p-1 shadow-sm border border-gray-100">
-          <button v-for="opt in filterOptions" :key="opt.key"
-            @click="filter = opt.key"
+        <div class="flex bg-white rounded-xl p-1 shadow-sm border border-gray-100 relative">
+          <button v-for="opt in filterOptions.slice(0, 4)" :key="opt.key"
+            @click="filter = opt.key; showTagFilter = false"
             class="px-4 py-1.5 rounded-lg text-sm font-medium transition"
-            :class="filter === opt.key ? 'bg-primary-500 text-white shadow-sm' : 'text-gray-500 hover:text-primary-500'"
+            :class="filter === opt.key && !selectedFilterTags.length ? 'bg-primary-500 text-white shadow-sm' : 'text-gray-500 hover:text-primary-500'"
           >{{ opt.label }}</button>
+          <!-- 标签筛选按钮 -->
+          <div class="relative">
+            <button @click.stop="showTagFilter = !showTagFilter; filter = 'tags'"
+              class="px-4 py-1.5 rounded-lg text-sm font-medium transition flex items-center gap-1"
+              :class="(filter === 'tags' || selectedFilterTags.length) ? 'bg-primary-500 text-white shadow-sm' : 'text-gray-500 hover:text-primary-500'"
+            >
+              {{ selectedFilterTags.length === 0 ? '标签' : (selectedFilterTags.length === 1 ? selectedFilterTags[0] : selectedFilterTags[0] + '+' + (selectedFilterTags.length - 1)) }}
+              <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <!-- 标签选择面板 -->
+            <div v-if="showTagFilter" class="absolute top-full mt-1 left-0 bg-white rounded-xl shadow-lg border border-gray-100 p-3 z-20 min-w-[180px] max-h-[240px] overflow-y-auto"
+              @click.stop>
+              <div class="flex items-center justify-between mb-2 px-1">
+                <span class="text-xs text-gray-400">选择标签筛选</span>
+                <button v-if="selectedFilterTags.length" @click="clearTagFilter()" class="text-xs text-gray-400 hover:text-red-500 transition">清除</button>
+              </div>
+              <template v-if="allTags.length">
+                <div class="flex flex-wrap gap-1.5">
+                  <button v-for="t in allTags" :key="t" @click.stop="toggleFilterTag(t)"
+                    class="px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer transition select-none"
+                    :class="selectedFilterTags.includes(t) ? (tagColor(t) + ' ring-1 ring-offset-0') : 'bg-gray-100 text-gray-500 hover:bg-gray-200'">
+                    {{ t }}
+                    <span v-if="selectedFilterTags.includes(t)" class="ml-0.5 opacity-70">✓</span>
+                  </button>
+                </div>
+              </template>
+              <div v-else class="text-xs text-gray-400 text-center py-3">暂无标签，先给食品添加标签吧</div>
+            </div>
+          </div>
         </div>
         <div class="relative flex-1 max-w-xs">
           <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
@@ -262,6 +369,42 @@ const filterOptions = [
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
             </button>
           </div>
+
+          <!-- 标签输入区 -->
+          <div class="col-span-full sm:col-span-3">
+            <div class="mb-2">
+              <div class="flex items-center justify-between mb-1.5">
+                <span class="text-xs text-gray-400">已添加的标签</span>
+                <span class="text-xs" :class="allTags.length >= 8 ? 'text-red-400' : 'text-gray-300'">{{ allTags.length }}/8</span>
+              </div>
+              <!-- 已有标签胶囊（可点击取消） -->
+              <div v-if="formTags.length" class="flex items-center gap-1.5 flex-wrap mb-2">
+                <button v-for="t in formTags" :key="t" @click="removeTag(t)" type="button"
+                  class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-xs font-medium transition select-none"
+                  :class="tagColor(t)">
+                  {{ t }}
+                  <span class="opacity-60">&times;</span>
+                </button>
+              </div>
+              <!-- 可选已有标签 -->
+              <div v-if="availableTags.length" class="flex items-center gap-1.5 flex-wrap mb-2">
+                <button v-for="t in availableTags" :key="t" @click.stop="addExistingTag(t)"
+                  class="px-2 py-0.5 rounded-full text-xs font-medium cursor-pointer transition select-none hover:scale-105"
+                  :class="'bg-gray-100 text-gray-500 hover:bg-gray-200'">
+                  + {{ t }}
+                </button>
+              </div>
+            </div>
+            <div class="relative">
+              <input v-model="tagInput" @keydown.enter.prevent="addTag" :disabled="allTags.length >= 8" :placeholder="allTags.length >= 8 ? '已达标签上限' : '+ 添加新标签...'"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 pr-9 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400" />
+              <button v-if="allTags.length >= 8" @click="showTagLimitModal = true" type="button"
+                class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary-500 transition" title="查看解决方法">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg>
+              </button>
+            </div>
+          </div>
+
           <input v-model="form.produce_date" type="date" class="border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-transparent" />
           <div class="relative flex rounded-xl border border-gray-200 focus-within:ring-2 focus-within:ring-primary-300 focus-within:border-transparent">
             <input v-model="form.shelf_life_days" type="number" placeholder="保质期" min="1" class="flex-1 min-w-0 px-3 py-2.5 text-sm focus:outline-none rounded-l-xl" />
@@ -300,6 +443,7 @@ const filterOptions = [
           <thead>
             <tr class="border-b border-gray-100 text-left text-xs text-gray-400 uppercase tracking-wide">
               <th class="px-5 py-3 font-medium">食品名称</th>
+              <th class="px-5 py-3 font-medium">标签</th>
               <th class="px-5 py-3 font-medium">生产日期</th>
               <th class="px-5 py-3 font-medium">保质期</th>
               <th class="px-5 py-3 font-medium">过期日期</th>
@@ -310,6 +454,16 @@ const filterOptions = [
           <tbody>
             <tr v-for="food in filteredList" :key="food.id" class="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition group">
               <td class="px-5 py-3.5"><router-link :to="`/f/${food.id}`" class="font-medium text-gray-800 hover:text-primary-600 transition">{{ food.name }}</router-link></td>
+              <td class="px-5 py-3.5">
+                <div class="flex items-center gap-1 flex-wrap">
+                  <template v-if="food.tags">
+                    <span v-for="t in JSON.parse(food.tags).slice(0, 2)" :key="t"
+                      class="px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap" :class="tagColor(t)">{{ t }}</span>
+                    <span v-if="JSON.parse(food.tags).length > 2"
+                      class="text-xs text-gray-300">...</span>
+                  </template>
+                </div>
+              </td>
               <td class="px-5 py-3.5 text-sm text-gray-500">{{ food.produce_date }}</td>
               <td class="px-5 py-3.5 text-sm text-gray-500">{{ food.shelf_life_days }} 天</td>
               <td class="px-5 py-3.5 text-sm text-gray-700 font-medium">{{ food.expire_date }}</td>
@@ -339,7 +493,14 @@ const filterOptions = [
           <router-link :to="`/f/${food.id}`" class="block active:opacity-70 transition">
             <div class="flex items-center justify-between">
               <div class="flex-1 min-w-0">
-                <div class="font-medium text-gray-800 truncate">{{ food.name }}</div>
+                <div class="flex items-center gap-2">
+                  <span class="font-medium text-gray-800 truncate">{{ food.name }}</span>
+                  <template v-if="food.tags && JSON.parse(food.tags).length">
+                    <span v-for="t in JSON.parse(food.tags).slice(0, 2)" :key="t"
+                      class="shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap" :class="tagColor(t)">{{ t }}</span>
+                    <span v-if="JSON.parse(food.tags).length > 2" class="text-[10px] text-gray-300 ml-0.5">...</span>
+                  </template>
+                </div>
                 <div class="text-xs text-gray-400 mt-1">
                   过期：{{ food.expire_date }}
                   <span :class="statusText(food)">（{{ food.days_left >= 0 ? '还剩 ' + food.days_left + ' 天' : '已过期 ' + (-food.days_left) + ' 天' }}）</span>
@@ -364,6 +525,22 @@ const filterOptions = [
       </div>
       </template>
     </main>
+
+    <!-- 超限弹窗（Teleport 到 body 避免层级问题） -->
+    <teleport to="body">
+      <div v-if="showTagLimitModal" class="fixed inset-0 z-[100] bg-black/30 flex items-center justify-center p-6" @click.self="showTagLimitModal = false">
+        <div class="bg-white rounded-2xl shadow-lg p-6 max-w-sm w-full text-center">
+          <div class="text-2xl mb-3">🏷️</div>
+          <p class="text-sm text-gray-600 mb-4">已达标签上限（8 个）</p>
+          <p class="text-xs text-gray-400 leading-relaxed mb-5">
+            如需添加新标签，可先在<br>
+            <strong>设置 → 数据管理 → 标签管理</strong><br>
+            中清理不需要的标签
+          </p>
+          <button @click="showTagLimitModal = false" class="bg-primary-500 hover:bg-primary-600 text-white px-6 py-2 rounded-xl text-sm font-medium transition">我知道了</button>
+        </div>
+      </div>
+    </teleport>
   </div>
 </template>
 

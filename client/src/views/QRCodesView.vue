@@ -16,6 +16,16 @@ onMounted(async () => {
 function qrUrl(id) {
   return `/api/foods/${id}/qrcode`
 }
+
+function daysLabel(d) {
+  return d >= 0 ? `还剩 ${d} 天` : `过期 ${-d} 天`
+}
+
+function daysColor(food) {
+  if (food.status === 'expired') return 'text-red-600'
+  if (food.status === 'expiring') return 'text-yellow-600'
+  return 'text-primary-600'
+}
 </script>
 
 <template>
@@ -42,7 +52,10 @@ function qrUrl(id) {
           class="bg-white rounded-2xl shadow-md border border-gray-100/80 p-4 flex flex-col items-center">
           <img :src="qrUrl(food.id)" :alt="food.name" class="w-full max-w-[200px] aspect-square rounded-lg" />
           <span class="mt-3 text-sm font-medium text-gray-700 text-center truncate w-full">{{ food.name }}</span>
-          <span class="text-xs text-gray-400 mt-0.5">{{ food.expire_date }} 过期</span>
+          <div class="flex items-center justify-between w-full mt-0.5">
+            <span class="text-xs text-gray-400">{{ food.expire_date }} 过期</span>
+            <span class="text-xs font-medium" :class="daysColor(food)">{{ daysLabel(food.days_left) }}</span>
+          </div>
         </div>
       </div>
     </main>

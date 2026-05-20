@@ -28,7 +28,14 @@ const expiringSoon = computed(() => {
   return foodList.value
     .filter(f => f.status === 'expiring')
     .sort((a, b) => a.days_left - b.days_left)
-    .slice(0, 5)
+    .slice(0, 2)
+})
+
+const expiredList = computed(() => {
+  return foodList.value
+    .filter(f => f.status === 'expired')
+    .sort((a, b) => b.days_left - a.days_left)
+    .slice(0, 2)
 })
 
 function daysLabel(d) {
@@ -104,53 +111,53 @@ function avatarUrl(seed) {
           </div>
 
           <template v-else>
-            <!-- 即将过期提醒 -->
-            <div v-if="expiringSoon.length > 0" class="bg-white rounded-2xl shadow-md border border-gray-100/80 p-5 mb-6">
-              <div class="flex items-center justify-between mb-4">
-                <h3 class="font-semibold text-gray-800 flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full bg-yellow-400"></span>
-                  即将过期
-                </h3>
-                <router-link to="/foods" class="text-xs text-primary-500 hover:text-primary-600 font-medium transition">
-                  查看全部 →
-                </router-link>
+            <!-- 临期 + 已过期 双栏 -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+              <!-- 即将过期 -->
+              <div class="bg-white rounded-2xl shadow-md border border-gray-100/80 p-5 min-h-[160px] flex flex-col">
+                <div class="flex items-center justify-between mb-3">
+                  <h3 class="font-semibold text-gray-800 text-sm flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-yellow-400"></span>
+                    即将过期
+                  </h3>
+                  <router-link v-if="stats.expiring > 0" to="/foods" class="text-xs text-primary-500 hover:text-primary-600 font-medium transition">
+                    查看全部 →
+                  </router-link>
+                </div>
+                <div v-if="expiringSoon.length" class="space-y-2 flex-1">
+                  <router-link v-for="food in expiringSoon" :key="food.id" :to="`/f/${food.id}`"
+                    class="flex items-center justify-between py-2 px-3 bg-yellow-50 rounded-xl hover:bg-yellow-100 transition">
+                    <span class="text-sm font-medium text-gray-700 truncate max-w-[70%]">{{ food.name }}</span>
+                    <span class="text-xs text-yellow-600 font-medium shrink-0 ml-2">{{ daysLabel(food.days_left) }}</span>
+                  </router-link>
+                </div>
+                <div v-else class="flex-1 flex items-center justify-center">
+                  <span class="text-xs text-gray-300">保质期还早呢~</span>
+                </div>
               </div>
-              <div class="space-y-2">
-                <router-link v-for="food in expiringSoon" :key="food.id"
-                  :to="`/f/${food.id}`"
-                  class="flex items-center justify-between py-2.5 px-3 bg-yellow-50 rounded-xl hover:bg-yellow-100 transition">
-                  <span class="text-sm font-medium text-gray-700 truncate">{{ food.name }}</span>
-                  <span class="text-xs text-yellow-600 font-medium shrink-0 ml-3">{{ daysLabel(food.days_left) }}</span>
-                </router-link>
-              </div>
-            </div>
 
-            <!-- 快捷入口 -->
-            <div class="grid grid-cols-2 gap-3 mb-6">
-              <router-link to="/foods"
-                class="bg-white rounded-2xl shadow-md border border-gray-100/80 p-4 flex items-center gap-3 hover:shadow-lg transition">
-                <div class="w-10 h-10 rounded-xl bg-primary-100 flex items-center justify-center shrink-0">
-                  <svg class="w-5 h-5 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                  </svg>
+              <!-- 已过期 -->
+              <div class="bg-white rounded-2xl shadow-md border border-gray-100/80 p-5 min-h-[160px] flex flex-col">
+                <div class="flex items-center justify-between mb-3">
+                  <h3 class="font-semibold text-gray-800 text-sm flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-red-400"></span>
+                    已过期
+                  </h3>
+                  <router-link v-if="stats.expired > 0" to="/foods" class="text-xs text-primary-500 hover:text-primary-600 font-medium transition">
+                    查看全部 →
+                  </router-link>
                 </div>
-                <div>
-                  <div class="text-sm font-medium text-gray-700">食品管理</div>
-                  <div class="text-xs text-gray-400 mt-0.5">查看和筛选全部食品</div>
+                <div v-if="expiredList.length" class="space-y-2 flex-1">
+                  <router-link v-for="food in expiredList" :key="food.id" :to="`/f/${food.id}`"
+                    class="flex items-center justify-between py-2 px-3 bg-red-50 rounded-xl hover:bg-red-100 transition">
+                    <span class="text-sm font-medium text-gray-700 truncate max-w-[70%]">{{ food.name }}</span>
+                    <span class="text-xs text-red-600 font-medium shrink-0 ml-2">{{ daysLabel(food.days_left) }}</span>
+                  </router-link>
                 </div>
-              </router-link>
-              <router-link to="/qrcodes"
-                class="bg-white rounded-2xl shadow-md border border-gray-100/80 p-4 flex items-center gap-3 hover:shadow-lg transition">
-                <div class="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center shrink-0">
-                  <svg class="w-5 h-5 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM14.25 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM3.75 14.25c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM14.25 14.25c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5z" />
-                  </svg>
+                <div v-else class="flex-1 flex items-center justify-center">
+                  <span class="text-xs text-gray-300">都在保质期内~</span>
                 </div>
-                <div>
-                  <div class="text-sm font-medium text-gray-700">二维码打印</div>
-                  <div class="text-xs text-gray-400 mt-0.5">批量打印食品二维码</div>
-                </div>
-              </router-link>
+              </div>
             </div>
           </template>
         </template>

@@ -7,6 +7,7 @@ import LoginView from '../views/LoginView.vue'
 import FoodsView from '../views/FoodsView.vue'
 import QRCodesView from '../views/QRCodesView.vue'
 import ScanView from '../views/ScanView.vue'
+import TagManageView from '../views/TagManageView.vue'
 
 const routes = [
   { path: '/', component: HomeView },
@@ -16,6 +17,7 @@ const routes = [
   { path: '/f/:id', component: FoodDetail },
   { path: '/settings', component: SettingsView },
   { path: '/settings/edit', component: EditProfile },
+  { path: '/tags', component: TagManageView },
   { path: '/login', component: LoginView }
 ]
 

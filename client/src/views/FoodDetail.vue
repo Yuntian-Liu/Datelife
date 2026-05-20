@@ -73,6 +73,24 @@ function statusBorder(f) {
 
 const showConfirm = useConfirm()
 
+const TAG_COLORS = ['bg-blue-100 text-blue-700', 'bg-amber-100 text-amber-700', 'bg-green-100 text-green-700', 'bg-purple-100 text-purple-700', 'bg-pink-100 text-pink-700', 'bg-cyan-100 text-cyan-700', 'bg-orange-100 text-orange-700', 'bg-lime-100 text-lime-700']
+const tagColorCache = new Map()
+
+function tagColor(name) {
+  if (tagColorCache.has(name)) return tagColorCache.get(name)
+  const used = [...tagColorCache.values()]
+  let idx = 0
+  for (let i = 0; i < name.length; i++) idx += name.charCodeAt(i)
+  let color = TAG_COLORS[idx % TAG_COLORS.length]
+  while (used.includes(color)) { idx++; color = TAG_COLORS[idx % TAG_COLORS.length] }
+  tagColorCache.set(name, color)
+  return color
+}
+
+function foodTags(f) {
+  try { return JSON.parse(f.tags || '[]') } catch { return [] }
+}
+
 function openEdit() {
   router.push({ path: '/', query: { edit: food.id } })
 }
@@ -119,6 +137,11 @@ async function handleDelete() {
               <span :class="statusDot(food)" class="w-2 h-2 rounded-full"></span>
               {{ statusLabel(food) }}
             </span>
+          </div>
+
+          <!-- 标签 -->
+          <div v-if="foodTags(food).length" class="flex flex-wrap gap-1.5 mb-6">
+            <span v-for="t in foodTags(food)" :key="t" class="px-3 py-1 rounded-full text-sm font-medium" :class="tagColor(t)">{{ t }}</span>
           </div>
 
           <div class="space-y-0 divide-y divide-gray-100">
@@ -181,6 +204,11 @@ async function handleDelete() {
               <span :class="statusDot(food)" class="w-1.5 h-1.5 rounded-full"></span>
               {{ statusLabel(food) }}
             </span>
+          </div>
+
+          <!-- 标签 -->
+          <div v-if="foodTags(food).length" class="flex flex-wrap gap-1 mb-3">
+            <span v-for="t in foodTags(food)" :key="t" class="px-2 py-0.5 rounded-full text-xs font-medium" :class="tagColor(t)">{{ t }}</span>
           </div>
 
           <div class="space-y-0 divide-y divide-gray-100 text-sm">

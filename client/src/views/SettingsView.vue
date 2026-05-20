@@ -279,7 +279,10 @@ onMounted(async () => {
             </li>
             <li class="flex items-start gap-2.5">
               <div class="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center shrink-0 mt-0.5">
-                <svg class="w-4 h-4 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM14.25 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM3.75 14.25c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 18.75v-4.5zM14.25 14.25c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5z" /></svg>
+                <svg class="w-4 h-4 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M7 7h3a2 2 0 012 2v3m0 5a2 2 0 002 2H7V7zm0 10h10M7 17h10a2 2 0 002-2V7"/>
+                  <circle cx="18" cy="11" r="1" fill="currentColor"/>
+                </svg>
               </div>
               <div>
                 <span class="text-sm font-medium text-gray-700">二维码标签</span>
@@ -414,6 +417,21 @@ onMounted(async () => {
         <div>
           <h3 class="text-sm font-semibold text-gray-400 px-1 mb-2">数据管理</h3>
           <div class="bg-white rounded-2xl shadow-sm border border-gray-100/80 overflow-hidden">
+            <router-link to="/tags"
+              class="flex items-center gap-3 px-4 py-3.5 active:bg-gray-50 transition cursor-pointer">
+              <div class="w-9 h-9 rounded-xl bg-purple-50 flex items-center justify-center shrink-0">
+                <svg class="w-5 h-5 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.659A2.25 2.25 0 009.568 3z" />
+                  <circle cx="16" cy="11" r="1.5" fill="currentColor" />
+                </svg>
+              </div>
+              <span class="flex-1 text-sm font-medium text-gray-700">标签管理</span>
+              <span class="text-xs text-gray-400">管理所有食品的标签</span>
+              <svg class="w-4 h-4 text-gray-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </router-link>
+
             <div @click="exportData"
               class="flex items-center gap-3 px-4 py-3.5 active:bg-gray-50 transition cursor-pointer">
               <div class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">

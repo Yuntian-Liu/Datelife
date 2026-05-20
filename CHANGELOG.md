@@ -4,6 +4,36 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2.6.0-alpha] - 2026-05-20
+
+### Added
+
+- Complete tag management system: colored capsule tag input with auto-complete, 8-tag global limit
+- Tag filter bar: filter food list by tags
+- Tag management page: Settings → Data Management → Tag Management, global tag deletion API
+- Tag display on food detail page: colored capsules
+- Global tag deletion API: DELETE /api/foods/tags/:tagName
+- Database `tags` column migration (TEXT DEFAULT '[]')
+- Homepage expired foods section: side-by-side with expiring soon, max 2 items, friendly empty state
+- QR code status-based color coding: green/amber/red
+- QR code card shows remaining days with color
+
+### Improved
+
+- Homepage streamlined: removed shortcut cards, replaced with expiring+expired dual-column single-screen layout
+- Tag input disabled + ℹ icon tip when global limit reached
+- QR code card expiry date and remaining days side-by-side on one line
+
+### Fixed
+
+- Tag counter now uses global `allTags.length` to reflect system-wide tag count
+- Template inline `.filter()` replaced with `computed` property for performance
+- Limit modal uses `<Teleport to="body">` to ensure proper rendering
+- Tag management delete dialog `tagCounts` correctly unwraps ref (`.value`)
+- Tag management icon replaced with standard Heroicons tag shape
+
+---
+
 ## [2.5.4-alpha] - 2026-05-20
 
 ### Fixed

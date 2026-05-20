@@ -75,6 +75,13 @@ function initTables() {
   } catch (e) {
     // 列已存在，忽略错误
   }
+
+  // 给 foods 表添加 tags 列（如果不存在）
+  try {
+    db.prepare("ALTER TABLE foods ADD COLUMN tags TEXT DEFAULT '[]'").run()
+  } catch (e) {
+    // 列已存在，忽略错误
+  }
 }
 
 function getNextUid() {
