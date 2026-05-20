@@ -19,11 +19,13 @@ onMounted(async () => {
   startTimeoutTimer()
 
   const isMobile = window.innerWidth < 640
+  // 用屏幕实际比例作为 aspectRatio，让视频流铺满容器避免黑边
+  const screenRatio = window.innerWidth / window.innerHeight
   const config = mode === 'barcode'
     ? {
         fps: 15,
-        qrbox: { width: isMobile ? 280 : 360, height: isMobile ? 150 : 180 },
-        aspectRatio: 1.777,
+        qrbox: { width: isMobile ? 280 : 360, height: isMobile ? 80 : 100 },
+        aspectRatio: isMobile ? Math.min(screenRatio * 1.8, 2) : 1.777,
         experimentalFeatures: { useBarCodeDetectorIfSupported: true },
         formatsToSupport: [
           Html5QrcodeSupportedFormats.EAN_13,
@@ -36,7 +38,7 @@ onMounted(async () => {
           Html5QrcodeSupportedFormats.ITF
         ]
       }
-    : { fps: 10, qrbox: { width: isMobile ? 220 : 250, height: isMobile ? 220 : 250 }, aspectRatio: 1 }
+    : { fps: 10, qrbox: { width: isMobile ? 240 : 280, height: isMobile ? 240 : 280 }, aspectRatio: isMobile ? Math.min(screenRatio * 1.4, 1.2) : 1 }
 
   try {
     logger.info('scan', '扫码页初始化', { mode })
@@ -153,6 +155,13 @@ function goBack() {
   align-items: center !important;
   justify-content: center !important;
   overflow: hidden;
+}
+
+/* 强制摄像头视频铺满容器，消除黑边 */
+#scanner video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
 }
 </style>
 

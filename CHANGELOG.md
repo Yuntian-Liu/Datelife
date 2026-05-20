@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2.5.3-alpha] - 2026-05-20
+
+### Fixed
+
+- Scan page camera video not filling container (black bars around edges)
+- QR code scan viewfinder compressed into vertical rectangle (restored to square)
+- Barcode scan viewfinder too tall (changed to wide rectangle matching barcode shape)
+
+### Changed
+
+- `aspectRatio` now dynamically calculated from actual screen dimensions instead of hardcoded values
+- Added CSS rule forcing `object-fit: cover` on scanner video element
+
+---
+
 ## [2.5.2-alpha] - 2026-05-20
 
 ### Fixed
