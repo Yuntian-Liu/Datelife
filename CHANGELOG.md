@@ -4,6 +4,33 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2.7.0-alpha] - 2026-05-21
+
+### Added
+
+- Tag persistence system: independent `tags` table, removing tag from food no longer deletes it globally
+- Tag management page: 8-tag limit with counter + create tag API (POST /api/foods/tags)
+- Sort toggle: capsule-shaped sorter next to search box (by add time / by expiry urgency)
+- About detail page: developer info, GitHub open source link, feedback email, version log
+- Food detail page now read-only mode (edit/delete buttons removed)
+
+### Improved
+
+- Mobile QR code card: 3-digit days indicator instead of two-column text
+- Mobile filter bar: 3-char button labels auto line-break on mobile
+- Mobile food card: two-line layout for remaining days + date
+- Tag filter dropdown: right-aligned on mobile, vertical layout
+- Search box restyled as capsule, unified with sort toggle
+- Barcode scanner: reduced FPS, removed experimental BarcodeDetector for performance
+- Diagnostic logger coverage: tags, sort, scan, export, profile editing
+- User agreement & privacy policy: tag persistence, diagnostic log declarations
+
+### Fixed
+
+- Food detail page back button navigated to home instead of previous page
+
+---
+
 ## [2.6.0-alpha] - 2026-05-20
 
 ### Added
@@ -197,6 +224,31 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2.0.0-alpha] - 2026-05-19
+
+### Added
+
+- **Authentication system** — email verification code + password dual-mode login/register
+- JWT authentication (HMAC-SHA256, 30-day expiry) with Bearer token middleware
+- Cloudflare Turnstile human verification (required before sending verification codes)
+- Resend API integration for sending 6-digit verification code emails
+- User Agreement & Privacy Policy — must agree before registration
+- Auto-registration hint — unregistered emails auto-create account after verification
+- **User Badge system** — Developer / Early Tester / Co-creator badges (configurable via SQL)
+- Login page with 3-step wizard (email → verification code → register)
+- Settings page dual-state (welcome for guests / profile editing for logged-in users)
+- PC Header navigation — avatar + settings for logged-in users, login button for guests
+
+### Improved
+
+- Foods route now enforces user data isolation via `user_id` permission checks
+- Legacy food data remains publicly accessible (`user_id` allows NULL)
+- Password security: scrypt hashing + random salt + timingSafeEqual comparison
+- Rate limiting: IP-based sliding window (3 sends/minute for verification codes)
+- Development docs fully rewritten with better formatting and new feature documentation
+
+---
+
 ## [1.3.0-alpha] - 2026-05-19
 
 ### Added
@@ -214,7 +266,7 @@ All notable changes to this project will be documented in this file.
 
 ---
 
-## [1.2.2-alpha] - 2026-05-18
+## [1.2.2-alpha] - 2026-05-19
 
 ### Fixed
 
@@ -288,31 +340,6 @@ All notable changes to this project will be documented in this file.
 - Frontend: Vue 3 + Vite + Tailwind CSS + Vue Router
 - Backend: Express.js + better-sqlite3 (SQLite)
 - QR Code: node-qrcode
-
----
-
-## [2.0.0-alpha] - 2026-05-19
-
-### Added
-
-- **Authentication system** — email verification code + password dual-mode login/register
-- JWT authentication (HMAC-SHA256, 30-day expiry) with Bearer token middleware
-- Cloudflare Turnstile human verification (required before sending verification codes)
-- Resend API integration for sending 6-digit verification code emails
-- User Agreement & Privacy Policy — must agree before registration
-- Auto-registration hint — unregistered emails auto-create account after verification
-- **User Badge system** — Developer / Early Tester / Co-creator badges (configurable via SQL)
-- Login page with 3-step wizard (email → verification code → register)
-- Settings page dual-state (welcome for guests / profile editing for logged-in users)
-- PC Header navigation — avatar + settings for logged-in users, login button for guests
-
-### Improved
-
-- Foods route now enforces user data isolation via `user_id` permission checks
-- Legacy food data remains publicly accessible (`user_id` allows NULL)
-- Password security: scrypt hashing + random salt + timingSafeEqual comparison
-- Rate limiting: IP-based sliding window (3 sends/minute for verification codes)
-- Development docs fully rewritten with better formatting and new feature documentation
 
 ---
 

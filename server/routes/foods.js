@@ -27,6 +27,15 @@ function attachStatus(food) {
   return { ...food, status, days_left: daysLeft }
 }
 
+function syncTags(db, userId, tagsJson) {
+  try {
+    const arr = JSON.parse(tagsJson)
+    if (!Array.isArray(arr)) return
+    const stmt = db.prepare('INSERT OR IGNORE INTO tags (user_id, name) VALUES (?, ?)')
+    for (const t of arr) { if (t) stmt.run(userId, t) }
+  } catch {}
+}
+
 // 获取食品列表（已登录只返回自己的，未登录返回空）
 router.get('/', (req, res) => {
   const db = getDb()
@@ -41,20 +50,28 @@ router.get('/', (req, res) => {
   res.json(foods.map(attachStatus))
 })
 
-// 获取当前用户所有已用标签（去重聚合，用于录入自动补全）
+// 获取当前用户所有标签（从 tags 表读取，独立于食品）
 router.get('/tags', (req, res) => {
   const db = getDb()
   if (!req.user) return res.json([])
 
-  const rows = db.prepare("SELECT tags FROM foods WHERE user_id = ? AND tags != '[]'").all(req.user.uid)
-  const tagSet = new Set()
-  for (const row of rows) {
-    try {
-      const arr = JSON.parse(row.tags)
-      if (Array.isArray(arr)) arr.forEach(t => { if (t) tagSet.add(t) })
-    } catch {}
+  const rows = db.prepare('SELECT name FROM tags WHERE user_id = ? ORDER BY name').all(req.user.uid)
+  res.json(rows.map(r => r.name))
+})
+
+// 新增标签（需要登录）
+router.post('/tags', authRequired, (req, res) => {
+  const { name } = req.body
+  if (!name || !name.trim()) return res.status(400).json({ error: '标签名不能为空' })
+  const db = getDb()
+  const trimmed = name.trim()
+  try {
+    db.prepare('INSERT INTO tags (user_id, name) VALUES (?, ?)').run(req.user.uid, trimmed)
+    res.json({ name: trimmed })
+  } catch (e) {
+    if (e.message?.includes('UNIQUE')) return res.status(409).json({ error: '标签已存在' })
+    throw e
   }
-  res.json([...tagSet].sort())
 })
 
 // 获取单个食品（公开，附加 is_owner 标记）
@@ -82,6 +99,8 @@ router.post('/', authRequired, (req, res) => {
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(req.user.uid, name, barcode || null, produce_date, shelf_life_days, shelf_life_unit || '天', expire_date, category || null, tags || '[]')
 
+  syncTags(db, req.user.uid, tags || '[]')
+
   const food = db.prepare('SELECT * FROM foods WHERE id = ?').get(result.lastInsertRowid)
   res.status(201).json(attachStatus(food))
 })
@@ -107,6 +126,8 @@ router.put('/:id', authRequired, (req, res) => {
     WHERE id=?
   `).run(name, barcode, produce_date, shelf_life_days, shelf_life_unit, expire_date, category, tags, req.params.id)
 
+  syncTags(db, req.user.uid, tags)
+
   const food = db.prepare('SELECT * FROM foods WHERE id = ?').get(req.params.id)
   res.json(attachStatus(food))
 })
@@ -128,6 +149,9 @@ router.delete('/tags/:tagName', authRequired, (req, res) => {
   const db = getDb()
   const tagName = decodeURIComponent(req.params.tagName)
   if (!tagName) return res.status(400).json({ error: '标签名不能为空' })
+
+  // 从 tags 表删除
+  db.prepare('DELETE FROM tags WHERE user_id = ? AND name = ?').run(req.user.uid, tagName)
 
   // 找到所有包含该标签的食品
   const foods = db.prepare("SELECT id, tags FROM foods WHERE user_id = ? AND tags != '[]'").all(req.user.uid)

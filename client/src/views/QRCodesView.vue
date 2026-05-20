@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, inject, computed } from 'vue'
 import { foods } from '../utils/api'
+import { logger } from '../utils/logger'
 
 const { isAuthenticated } = inject('auth', { isAuthenticated: computed(() => false) })
 const foodList = ref([])
@@ -8,7 +9,12 @@ const loading = ref(true)
 
 onMounted(async () => {
   if (isAuthenticated.value) {
-    try { foodList.value = await foods.getAll() } catch (e) {}
+    try {
+      foodList.value = await foods.getAll()
+      logger.info('qrcode', '二维码页加载完成', { count: foodList.value.length })
+    } catch (e) {
+      logger.error('qrcode', '二维码页加载失败', { error: e.message })
+    }
   }
   loading.value = false
 })
@@ -17,8 +23,9 @@ function qrUrl(id) {
   return `/api/foods/${id}/qrcode`
 }
 
-function daysLabel(d) {
-  return d >= 0 ? `还剩 ${d} 天` : `过期 ${-d} 天`
+function daysDigits(d) {
+  const n = Math.abs(d)
+  return String(n).padStart(3, '0')
 }
 
 function daysColor(food) {
@@ -51,11 +58,9 @@ function daysColor(food) {
         <div v-for="food in foodList" :key="food.id"
           class="bg-white rounded-2xl shadow-md border border-gray-100/80 p-4 flex flex-col items-center">
           <img :src="qrUrl(food.id)" :alt="food.name" class="w-full max-w-[200px] aspect-square rounded-lg" />
-          <span class="mt-3 text-sm font-medium text-gray-700 text-center truncate w-full">{{ food.name }}</span>
-          <div class="flex items-center justify-between w-full mt-0.5">
-            <span class="text-xs text-gray-400">{{ food.expire_date }} 过期</span>
-            <span class="text-xs font-medium" :class="daysColor(food)">{{ daysLabel(food.days_left) }}</span>
-          </div>
+          <span class="text-[10px] tracking-widest leading-none" :class="daysColor(food)">{{ daysDigits(food.days_left) }}</span>
+          <span class="mt-1 text-sm font-medium text-gray-700 text-center truncate w-full">{{ food.name }}</span>
+          <span class="text-xs text-gray-400 mt-0.5">{{ food.expire_date }} 过期</span>
         </div>
       </div>
     </main>

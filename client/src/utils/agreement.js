@@ -1,7 +1,7 @@
 export const USER_AGREEMENT_HTML = `
 <div class="space-y-4">
   <h3 class="text-base font-semibold text-gray-800">一、服务描述</h3>
-  <p>Datelife（"食品日期管理"）是一款用于帮助用户管理食品保质期的在线工具。主要功能包括：录入食品的生产日期和保质期、自动计算过期时间并标记状态（正常/临期/过期）、通过扫码（条形码/二维码）快速识别和查询食品信息、为每个食品生成专属二维码供扫码查看详情、数据的导入与导出备份等。</p>
+  <p>Datelife（"食品日期管理"）是一款用于帮助用户管理食品保质期的在线工具。主要功能包括：录入食品的生产日期和保质期、自动计算过期时间并标记状态（正常/临期/过期）、通过扫码（条形码/二维码）快速识别和查询食品信息、为每个食品生成专属二维码供扫码查看详情、标签管理（可为食品添加自定义标签，标签全局持久存储、独立于食品存在，按标签筛选和批量管理，系统最多支持 8 个标签）、数据的导入与导出备份等。</p>
 
   <h3 class="text-base font-semibold text-gray-800">二、用户账号</h3>
   <p>使用 Datelife 的云端同步功能需要注册账号。账号安全由用户自行负责，包括但不限于：保管登录密码、不向他人泄露验证码、及时退出公共设备上的登录状态等。Datelife 不会以任何理由主动询问您的密码。</p>
@@ -21,10 +21,15 @@ export const USER_AGREEMENT_HTML = `
   <h3 class="text-base font-semibold text-gray-800">四、知识产权</h3>
   <p>您录入的所有食品数据归您所有。Datelife 平台的代码、设计、商标等知识产权归开发者所有，受法律保护。</p>
 
-  <h3 class="text-base font-semibold text-gray-800">五、服务可用性</h3>
+  <h3 class="text-base font-semibold text-gray-800">五、数据管理操作</h3>
+  <p>部分数据管理操作（如全局删除标签）为批量修改操作，一旦执行将不可撤销。系统在执行此类操作前会弹出确认提示，请仔细核对后再确认。
+
+标签持久存储：您添加的自定义标签独立存储于系统中，即使从所有食品中移除该标签，标签名称仍会保留，直到您在「标签管理」页面主动执行全局删除。全局删除操作将同时从标签列表和所有关联食品中移除该标签。系统最多支持 8 个标签。用户应对自己的数据管理操作负责。</p>
+
+  <h3 class="text-base font-semibold text-gray-800">六、服务可用性</h3>
   <p>我们将尽最大努力保证服务的稳定运行，但不对因不可抗力（包括但不限于：服务器故障、网络中断、第三方服务异常）导致的服务中断承担责任。服务可能会在不预先通知的情况下进行维护升级。</p>
 
-  <h3 class="text-base font-semibold text-gray-800">六、免责声明</h3>
+  <h3 class="text-base font-semibold text-gray-800">七、免责声明</h3>
   <p>Datelife 按「现状」(As Is) 提供服务，不对以下情况承担任何责任：</p>
   <ul class="list-disc pl-5 space-y-1">
     <li>因您自身原因（如密码泄露、设备丢失）导致的数据泄露或损失</li>
@@ -32,10 +37,10 @@ export const USER_AGREEMENT_HTML = `
     <li>因未及时查看提醒而食用过期食品造成的任何健康问题</li>
   </ul>
 
-  <h3 class="text-base font-semibold text-gray-800">七、协议变更</h3>
+  <h3 class="text-base font-semibold text-gray-800">八、协议变更</h3>
   <p>我们有权在必要时修改本协议内容。修改后的协议将在应用内公示，您继续使用 Datelife 即视为同意修改后的协议。</p>
 
-  <h3 class="text-base font-semibold text-gray-800">八、适用法律</h3>
+  <h3 class="text-base font-semibold text-gray-800">九、适用法律</h3>
   <p>本协议的解释、效力及纠纷解决均适用中华人民共和国法律。</p>
 </div>
 <p class="text-xs text-gray-400 mt-4 pt-3 border-t border-gray-200">最后更新：2026 年 5 月 20 日</p>
@@ -47,12 +52,13 @@ export const PRIVACY_POLICY_HTML = `
   <p>为了提供 Datelife 服务，我们会收集以下信息：</p>
   <ul class="list-disc pl-5 space-y-1">
     <li><strong>账号信息</strong>：邮箱地址、昵称、头像种子</li>
-    <li><strong>业务数据</strong>：您录入的食品名称、生产日期、保质期、条形码等数据</li>
+    <li><strong>业务数据</strong>：您录入的食品名称、生产日期、保质期、条形码、自定义标签等数据</li>
     <li><strong>设备权限</strong>：扫码功能需要临时调用摄像头。摄像头仅在扫码期间使用，<strong>不会存储、录制或传输任何图像数据</strong></li>
   </ul>
   <p><strong>我们不会收集</strong>：真实姓名、身份证号、手机号码、位置信息等敏感个人信息。</p>
+  <p><strong>标签隐私提示</strong>：自定义标签用于食品分类管理，建议避免在标签中使用真实姓名、身份证号、手机号等敏感个人信息。</p>
 
-  <p><strong>诊断日志</strong>：应用中包含一个本地诊断日志系统，记录应用运行状态、API 调用、路由跳转等非敏感信息。日志<strong>仅存储在您的浏览器本地</strong>，不会自动上传。只有在您主动使用「导出诊断日志」功能并手动发送给我们时，我们才能获取这些日志用于问题排查。日志内容不包含密码、完整条码数据等敏感信息。</p>
+  <p><strong>诊断日志</strong>：应用中包含一个本地诊断日志系统，记录应用运行状态、API 调用、路由跳转等非敏感信息。日志<strong>仅存储在您的浏览器本地</strong>，不会自动上传。只有在您主动使用「导出诊断日志」功能并手动发送给我们时，我们才能获取这些日志用于问题排查。日志内容不包含密码、完整条码数据等敏感信息，但可能包含标签名称。建议避免在标签中使用个人敏感信息。</p>
 
   <h3 class="text-base font-semibold text-gray-800">二、信息使用</h3>
   <p>收集的信息仅用于以下目的：</p>
@@ -83,8 +89,8 @@ export const PRIVACY_POLICY_HTML = `
   <h3 class="text-base font-semibold text-gray-800">五、用户权利</h3>
   <p>您对个人数据享有以下权利：</p>
   <ul class="list-disc pl-5 space-y-1">
-    <li><strong>导出数据</strong>：您可以随时请求获取我们持有的您的所有数据副本</li>
-    <li><strong>删除数据</strong>：退出登录可清除本地缓存；如需删除服务器端数据，请在设置页操作或联系我们（将在 7 个工作日内处理）</li>
+    <li><strong>导出数据</strong>：您可以随时请求获取我们持有的您的所有数据副本，包括食品信息和标签数据</li>
+    <li><strong>删除数据</strong>：退出登录可清除本地缓存；您可在设置页删除单个食品或全局删除标签；如需删除全部服务器端数据，请通过设置页操作或联系我们（将在 7 个工作日内处理）</li>
     <li><strong>更正信息</strong>：您可以随时修改昵称、个性签名等信息</li>
     <li><strong>拒绝非必要收集</strong>：除账号必需信息外，其他信息均为可选填写</li>
   </ul>

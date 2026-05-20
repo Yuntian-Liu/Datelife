@@ -3,6 +3,7 @@ import { ref, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { auth } from '../utils/api'
 import { useAuth } from '../composables/useAuth'
+import { logger } from '../utils/logger'
 import TurnstileWidget from '../components/TurnstileWidget.vue'
 import { USER_AGREEMENT_HTML, PRIVACY_POLICY_HTML } from '../utils/agreement'
 
@@ -114,9 +115,11 @@ async function sendCode() {
   loading.value = true
   try {
     await auth.sendCode(email.value, turnstileToken.value)
+    logger.info('auth', '验证码已发送', { email: email.value })
     step.value = 2
     startCountdown()
   } catch (e) {
+    logger.error('auth', '验证码发送失败', { email: email.value, error: e.message })
     errMsg.value = e.message
   } finally {
     loading.value = false
@@ -139,10 +142,12 @@ async function verifyCode() {
       generateAvatarPool()
       step.value = 3
     } else {
+      logger.info('auth', '验证码登录成功', { email: email.value })
       setAuth(result.token, result.user)
       router.push('/')
     }
   } catch (e) {
+    logger.error('auth', '登录失败', { email: email.value, error: e.message })
     errMsg.value = e.message
   } finally {
     loading.value = false
@@ -159,9 +164,11 @@ async function passwordLogin() {
   loading.value = true
   try {
     const result = await auth.loginPassword(email.value, password.value)
+    logger.info('auth', '密码登录成功', { email: email.value })
     setAuth(result.token, result.user)
     router.push('/')
   } catch (e) {
+    logger.error('auth', '登录失败', { email: email.value, error: e.message })
     errMsg.value = e.message
   } finally {
     loading.value = false
@@ -186,9 +193,11 @@ async function register() {
       email.value, fullCode, nickname.value, password.value,
       avatarSeed.value, bio.value || ''
     )
+    logger.info('auth', '注册成功', { uid: result.user.uid, email: email.value })
     registerResult.value = result
     step.value = 5
   } catch (e) {
+    logger.error('auth', '注册失败', { email: email.value, error: e.message })
     errMsg.value = e.message
   } finally {
     loading.value = false

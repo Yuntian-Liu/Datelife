@@ -2,7 +2,7 @@
 import { ref, onMounted, watch, computed, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { foods } from '../utils/api'
-import { useConfirm } from '../composables/useConfirm'
+
 import { logger } from '../utils/logger'
 
 const route = useRoute()
@@ -21,6 +21,7 @@ async function loadFood() {
   try {
     const data = await foods.getById(route.params.id)
     food.value = data
+    logger.info('detail', '查看食品详情（只读模式，从食品列表管理）', { id: data.id, name: data.name, isOwner: isOwner.value })
     qrKey.value = Date.now()
   } catch (e) {
     logger.error('detail', '加载食品失败', { id: route.params.id, error: e.message })
@@ -71,7 +72,6 @@ function statusBorder(f) {
   return 'border-l-primary-400'
 }
 
-const showConfirm = useConfirm()
 
 const TAG_COLORS = ['bg-blue-100 text-blue-700', 'bg-amber-100 text-amber-700', 'bg-green-100 text-green-700', 'bg-purple-100 text-purple-700', 'bg-pink-100 text-pink-700', 'bg-cyan-100 text-cyan-700', 'bg-orange-100 text-orange-700', 'bg-lime-100 text-lime-700']
 const tagColorCache = new Map()
@@ -91,23 +91,7 @@ function foodTags(f) {
   try { return JSON.parse(f.tags || '[]') } catch { return [] }
 }
 
-function openEdit() {
-  router.push({ path: '/', query: { edit: food.id } })
-}
 
-async function handleDelete() {
-  const confirmed = await showConfirm({
-    title: '删除食品',
-    message: '确定要删除这个食品吗？此操作不可恢复。',
-    confirmText: '删除',
-    cancelText: '取消',
-    type: 'danger'
-  })
-  if (!confirmed) return
-  await foods.delete(food.id)
-  logger.info('detail', '删除食品', { id: food.id })
-  router.push('/')
-}
 </script>
 
 <template>
@@ -115,7 +99,7 @@ async function handleDelete() {
     <!-- 顶部导航 -->
     <header class="bg-white/80 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-10">
       <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4">
-        <button @click="router.push('/')"
+        <button @click="router.back()"
           class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-primary-600 bg-gray-100 hover:bg-primary-50 px-4 py-2 rounded-full transition font-medium">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
           返回列表
@@ -169,16 +153,7 @@ async function handleDelete() {
             录入于 {{ food.created_at }}
           </div>
 
-          <!-- 编辑/删除按钮（仅自己的食品） -->
-          <div v-if="isOwner" class="flex gap-2 mt-4 pt-4 border-t border-gray-100">
-            <button @click="openEdit" class="flex-1 bg-primary-50 hover:bg-primary-100 text-primary-600 py-2 rounded-xl text-sm font-medium transition">
-              编辑
-            </button>
-            <button @click="handleDelete" class="flex-1 bg-red-50 hover:bg-red-100 text-red-500 py-2 rounded-xl text-sm font-medium transition">
-              删除
-            </button>
-          </div>
-          <div v-else-if="isAuthenticated && !isOwner" class="mt-4 pt-4 border-t border-gray-100 text-center">
+          <div v-if="isAuthenticated && !isOwner" class="mt-4 pt-4 border-t border-gray-100 text-center">
             <p class="text-xs text-gray-400">这是其他用户的食品</p>
           </div>
         </div>

@@ -2,6 +2,7 @@
 import { ref, onMounted, inject, computed } from 'vue'
 import { foods } from '../utils/api'
 import { getBadge } from '../utils/badges'
+import { logger } from '../utils/logger'
 
 const { user, isAuthenticated } = inject('auth', { user: ref(null), isAuthenticated: computed(() => false) })
 const badge = computed(() => getBadge(user.value?.badge))
@@ -11,7 +12,12 @@ const loading = ref(true)
 
 onMounted(async () => {
   if (isAuthenticated.value) {
-    try { foodList.value = await foods.getAll() } catch (e) {}
+    try {
+      foodList.value = await foods.getAll()
+      logger.info('home', '首页加载完成', { total: foodList.value.length, expiring: stats.value.expiring, expired: stats.value.expired })
+    } catch (e) {
+      logger.error('home', '首页加载失败', { error: e.message })
+    }
   }
   loading.value = false
 })

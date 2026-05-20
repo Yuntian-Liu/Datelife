@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { auth } from '../utils/api'
 import { useAuth } from '../composables/useAuth'
+import { logger } from '../utils/logger'
 
 const router = useRouter()
 const { user } = useAuth()
@@ -87,8 +88,10 @@ async function saveProfile() {
     const updated = await auth.updateProfile(data)
     Object.assign(user.value, updated)
     localStorage.setItem('user', JSON.stringify(user.value))
+    logger.info('profile', '保存资料成功', { nickname: data.nickname })
     router.push('/settings')
   } catch (e) {
+    logger.error('profile', '保存资料失败', { error: e.message })
     errMsg.value = e.message
   } finally {
     saving.value = false

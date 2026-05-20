@@ -9,6 +9,7 @@ const router = useRouter()
 const showConfirm = useConfirm()
 const { isAuthenticated } = inject('auth', { isAuthenticated: computed(() => false) })
 
+const MAX_TAGS = 8
 const allTags = ref([])
 const tagInput = ref('')
 const tagCounts = ref({})
@@ -31,31 +32,44 @@ function tagColor(name) {
 async function loadTags() {
   if (!isAuthenticated.value) return
   try {
-    const list = await foods.getAll()
+    const [tagNames, list] = await Promise.all([foods.getTags(), foods.getAll()])
     const countMap = {}
     for (const f of list) {
       try {
         JSON.parse(f.tags || '[]').forEach(t => { countMap[t] = (countMap[t] || 0) + 1 })
       } catch {}
     }
-    allTags.value = Object.keys(countMap).sort()
+    for (const t of tagNames) {
+      if (!(t in countMap)) countMap[t] = 0
+    }
+    allTags.value = tagNames
     tagCounts.value = countMap
-  } catch (e) {}
+    logger.info('tags', '标签管理页加载完成', { count: allTags.value.length })
+  } catch (e) {
+    logger.error('tags', '标签管理页加载失败', { error: e.message })
+  }
   loading.value = false
 }
 
 onMounted(loadTags)
 
-function addTag() {
+async function addTag() {
   const t = tagInput.value.trim()
   if (!t) return
   if (allTags.value.includes(t)) {
     tagInput.value = ''
     return
   }
-  allTags.value.push(t)
-  allTags.value.sort()
-  tagCounts.value[t] = 0
+  if (allTags.value.length >= MAX_TAGS) return
+  try {
+    await foods.createTag(t)
+    allTags.value.push(t)
+    allTags.value.sort()
+    tagCounts.value[t] = 0
+    logger.info('tags', '标签管理页新增标签', { tag: t })
+  } catch (e) {
+    logger.error('tags', '标签管理页新增标签失败', { tag: t, error: e.message })
+  }
   tagInput.value = ''
 }
 
@@ -108,7 +122,7 @@ async function deleteTag(t) {
         <!-- 标签列表 -->
         <div v-if="allTags.length" class="space-y-3">
           <div class="flex items-center justify-between mb-2">
-            <span class="text-xs text-gray-400">所有标签 ({{ allTags.length }})</span>
+            <span class="text-xs" :class="allTags.length >= MAX_TAGS ? 'text-red-400' : 'text-gray-400'">所有标签 ({{ allTags.length }}/{{ MAX_TAGS }})</span>
           </div>
           <div class="space-y-2">
             <div v-for="t in allTags" :key="t"
@@ -134,11 +148,16 @@ async function deleteTag(t) {
         <!-- 新增标签 -->
         <div class="mt-8 pt-6 border-t border-gray-100">
           <h2 class="text-sm font-semibold text-gray-500 mb-3">新增标签</h2>
+          <div v-if="allTags.length >= MAX_TAGS" class="p-3 bg-amber-50 text-amber-700 rounded-xl text-xs mb-3">
+            已达标签上限（{{ MAX_TAGS }} 个）。如需新增，请先在上方列表中删除不需要的标签。
+          </div>
           <div class="flex gap-2">
-            <input v-model="tagInput" @keydown.enter.prevent="addTag" placeholder="输入标签名..."
-              class="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-transparent" />
-            <button @click="addTag"
-              class="bg-primary-500 hover:bg-primary-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition shrink-0">添加</button>
+            <input v-model="tagInput" @keydown.enter.prevent="addTag"
+              :disabled="allTags.length >= MAX_TAGS"
+              :placeholder="allTags.length >= MAX_TAGS ? '已达标签上限' : '输入标签名...'"
+              class="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400" />
+            <button @click="addTag" :disabled="allTags.length >= MAX_TAGS"
+              class="bg-primary-500 hover:bg-primary-600 disabled:bg-gray-300 disabled:opacity-50 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition shrink-0">添加</button>
           </div>
         </div>
       </div>

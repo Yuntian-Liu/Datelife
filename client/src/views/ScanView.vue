@@ -23,10 +23,9 @@ onMounted(async () => {
   const screenRatio = window.innerWidth / window.innerHeight
   const config = mode === 'barcode'
     ? {
-        fps: 15,
+        fps: 10,
         qrbox: { width: isMobile ? 560 : 720, height: isMobile ? 80 : 100 },
         aspectRatio: isMobile ? Math.min(screenRatio * 1.8, 2) : 1.777,
-        experimentalFeatures: { useBarCodeDetectorIfSupported: true },
         formatsToSupport: [
           Html5QrcodeSupportedFormats.EAN_13,
           Html5QrcodeSupportedFormats.EAN_8,
@@ -42,6 +41,7 @@ onMounted(async () => {
 
   try {
     logger.info('scan', '扫码页初始化', { mode })
+    logger.info('scan', '扫码配置', { mode, fps: config.fps, formatsCount: config.formatsToSupport?.length || 0, isMobile })
     scanner = new Html5Qrcode('scanner')
     await scanner.start({ facingMode: 'environment' }, config, onScanSuccess, () => {})
     logger.info('scan', '摄像头启动成功', { mode })

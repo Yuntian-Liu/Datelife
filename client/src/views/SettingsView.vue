@@ -23,13 +23,14 @@ const fileInput = ref(null)
 async function exportData() {
   logger.info('export', '开始导出数据')
   const list = await foods.getAll()
-  logger.info('export', `导出 ${list.length} 条食品`)
+  const tagCount = [...new Set(list.flatMap(f => { try { return JSON.parse(f.tags || '[]') } catch { return [] } }))].length
+  logger.info('export', `导出 ${list.length} 条食品`, { tagCount })
   const data = {
     version: '1.0',
     exportDate: new Date().toISOString(),
     app: 'Datelife',
-    foods: list.map(({ name, barcode, produce_date, shelf_life_days, expire_date, category }) => ({
-      name, barcode, produce_date, shelf_life_days, expire_date, category
+    foods: list.map(({ name, barcode, produce_date, shelf_life_days, expire_date, category, tags }) => ({
+      name, barcode, produce_date, shelf_life_days, expire_date, category, tags
     }))
   }
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
@@ -123,7 +124,8 @@ async function handleImport(event) {
           barcode: item.barcode || null,
           produce_date: item.produce_date,
           shelf_life_days: item.shelf_life_days,
-          category: item.category || null
+          category: item.category || null,
+          tags: item.tags || '[]'
         })
         success++
         existingKeys.add(key)
@@ -157,6 +159,10 @@ async function handleImport(event) {
 // 协议/政策弹窗
 const showAgreement = ref(false)
 const agreementType = ref('agreement')
+
+// 关于详情弹窗
+const showAbout = ref(false)
+const showChangelog = ref(false)
 
 const avatarUrl = computed(() => {
   if (!user.value?.avatar_seed) return ''
@@ -471,7 +477,8 @@ onMounted(async () => {
           <h3 class="text-sm font-semibold text-gray-400 px-1 mb-2">关于</h3>
           <div class="bg-white rounded-2xl shadow-sm border border-gray-100/80 overflow-hidden">
             <!-- 当前版本 -->
-            <div class="flex items-center gap-3 px-4 py-3.5">
+            <div @click="showAbout = true"
+              class="flex items-center gap-3 px-4 py-3.5 active:bg-gray-50 transition cursor-pointer">
               <div class="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
                 <svg class="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4 16.5" />
@@ -479,6 +486,9 @@ onMounted(async () => {
               </div>
               <span class="flex-1 text-sm font-medium text-gray-700">当前版本</span>
               <span class="text-sm text-gray-400">v{{ appVersion }}</span>
+              <svg class="w-4 h-4 text-gray-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
             </div>
 
             <div class="border-t border-gray-100 mx-4"></div>
@@ -566,6 +576,138 @@ onMounted(async () => {
               class="w-full py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm font-medium transition">
               关闭
             </button>
+          </div>
+        </div>
+      </div>
+    </teleport>
+
+    <!-- 关于详情弹窗 -->
+    <teleport to="body">
+      <div v-if="showAbout" class="fixed inset-0 z-[100] flex items-center justify-center p-4"
+        @click.self="showAbout = false">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+        <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-sm max-h-[80vh] flex flex-col m-4">
+          <h2 class="text-lg font-semibold p-5 pb-0 font-brand shrink-0">关于 Datelife</h2>
+          <div class="p-5 overflow-y-auto text-sm text-gray-600 space-y-3">
+            <!-- 1. 开发者 -->
+            <div class="flex items-center gap-3 py-1">
+              <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
+                <svg class="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                </svg>
+              </div>
+              <span class="text-gray-400 text-xs w-14 shrink-0">开发者</span>
+              <span class="text-gray-700 font-medium">碳碳四键</span>
+            </div>
+
+            <!-- 2. GitHub -->
+            <a href="https://github.com/Yuntian-Liu/Datelife" target="_blank"
+              class="flex items-center gap-3 py-1 -mx-1 px-1 rounded-lg hover:bg-gray-50 transition group">
+              <div class="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center shrink-0">
+                <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                </svg>
+              </div>
+              <span class="text-gray-400 text-xs w-14 shrink-0">开源</span>
+              <span class="text-gray-700 font-medium group-hover:text-primary-500 transition">MIT 开源项目</span>
+              <svg class="w-3.5 h-3.5 text-gray-300 group-hover:text-primary-400 transition shrink-0 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+            </a>
+
+            <!-- 3. 反馈 -->
+            <a href="mailto:it@ytunx.com"
+              class="flex items-center gap-3 py-1 -mx-1 px-1 rounded-lg hover:bg-gray-50 transition group">
+              <div class="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center shrink-0">
+                <svg class="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                </svg>
+              </div>
+              <span class="text-gray-400 text-xs w-14 shrink-0">反馈</span>
+              <span class="text-gray-700 font-medium group-hover:text-primary-500 transition">it@ytunx.com</span>
+            </a>
+
+            <!-- 4. 版本日志 -->
+            <div @click="showChangelog = true"
+              class="flex items-center gap-3 py-1 -mx-1 px-1 rounded-lg hover:bg-gray-50 transition cursor-pointer group">
+              <div class="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center shrink-0">
+                <svg class="w-4 h-4 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                </svg>
+              </div>
+              <span class="text-gray-400 text-xs w-14 shrink-0">日志</span>
+              <span class="text-gray-700 font-medium">版本日志</span>
+              <svg class="w-3.5 h-3.5 text-gray-300 group-hover:text-primary-400 transition shrink-0 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+
+            <!-- 5. 开发声明 -->
+            <div class="bg-gray-50 rounded-xl p-4 text-xs text-gray-400 leading-relaxed space-y-2">
+              <p>Datelife 仍处于早期开发阶段，现有功能可能随时修改、调整或移除，不保证长期兼容。</p>
+              <p>如果你有任何想法或建议，欢迎通过 GitHub Issue 或邮件反馈。也欢迎提交 PR 参与共建，一起让 Datelife 变得更好！</p>
+            </div>
+          </div>
+          <div class="p-4 border-t border-gray-100 shrink-0">
+            <button @click="showAbout = false"
+              class="w-full py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm font-medium transition">
+              关闭
+            </button>
+          </div>
+        </div>
+      </div>
+    </teleport>
+
+    <!-- 版本日志弹窗（三级） -->
+    <teleport to="body">
+      <div v-if="showChangelog" class="fixed inset-0 z-[110] flex items-center justify-center p-4"
+        @click.self="showChangelog = false">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+        <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-sm max-h-[80vh] flex flex-col m-4">
+          <div class="flex items-center justify-between p-5 pb-0 shrink-0">
+            <div class="flex items-center gap-2">
+              <button @click="showChangelog = false" class="p-1 -ml-1 rounded-lg hover:bg-gray-100 transition text-gray-400 hover:text-gray-600">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <h2 class="text-lg font-semibold font-brand">版本日志</h2>
+            </div>
+            <span class="text-xs text-gray-400">v{{ appVersion }}</span>
+          </div>
+          <div class="p-5 overflow-y-auto text-sm text-gray-500 leading-relaxed space-y-4">
+            <div>
+              <h3 class="text-xs font-semibold text-gray-700 mb-2">v2.7.0-alpha · 2026-05-21</h3>
+              <div class="space-y-2">
+                <div>
+                  <p class="text-xs font-medium text-green-600 mb-1">新增</p>
+                  <ul class="text-xs text-gray-500 space-y-0.5 list-disc pl-4">
+                    <li>标签持久化系统：标签独立存储，移除食品标签不会全局删除</li>
+                    <li>标签管理页 8 标签上限 + 新建标签 API</li>
+                    <li>排序切换：搜索框旁胶囊形排序器（添加时间 / 到期紧急）</li>
+                    <li>关于详情页：开发者信息、GitHub 开源、反馈邮箱、版本日志</li>
+                  </ul>
+                </div>
+                <div>
+                  <p class="text-xs font-medium text-blue-600 mb-1">优化</p>
+                  <ul class="text-xs text-gray-500 space-y-0.5 list-disc pl-4">
+                    <li>移动端二维码卡片 3 位数字显示剩余天数</li>
+                    <li>移动端筛选栏三字按钮自适应换行</li>
+                    <li>移动端食品卡片两行布局、标签筛选面板右对齐</li>
+                    <li>搜索框改为胶囊形，视觉统一</li>
+                    <li>条形码扫描器性能优化</li>
+                    <li>诊断日志全面覆盖标签、排序、扫码、导出等功能</li>
+                    <li>用户协议与隐私政策更新</li>
+                  </ul>
+                </div>
+                <div>
+                  <p class="text-xs font-medium text-red-500 mb-1">修复</p>
+                  <ul class="text-xs text-gray-500 space-y-0.5 list-disc pl-4">
+                    <li>食品详情页返回按钮导航错误</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -34,6 +34,7 @@ export const foods = {
   update: (id, data) => request(`/foods/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (id) => request(`/foods/${id}`, { method: 'DELETE' }),
   getTags: () => request('/foods/tags'),
+  createTag: (name) => request('/foods/tags', { method: 'POST', body: JSON.stringify({ name }) }),
   deleteTag: (name) => request(`/foods/tags/${encodeURIComponent(name)}`, { method: 'DELETE' })
 }
 

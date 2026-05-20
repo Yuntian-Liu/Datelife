@@ -53,6 +53,14 @@ function initTables() {
       expires_at TEXT NOT NULL,
       attempts   INTEGER DEFAULT 0
     );
+
+    CREATE TABLE IF NOT EXISTS tags (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id    INTEGER NOT NULL,
+      name       TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+      UNIQUE(user_id, name)
+    );
   `)
 
   // 给 foods 表添加 user_id 列（如果不存在）
@@ -81,6 +89,19 @@ function initTables() {
     db.prepare("ALTER TABLE foods ADD COLUMN tags TEXT DEFAULT '[]'").run()
   } catch (e) {
     // 列已存在，忽略错误
+  }
+
+  // 首次启动：从 foods 迁移已有标签到 tags 表
+  const tagCount = db.prepare('SELECT COUNT(*) AS c FROM tags').get()
+  if (tagCount.c === 0) {
+    const rows = db.prepare("SELECT user_id, tags FROM foods WHERE tags != '[]'").all()
+    const insertTag = db.prepare('INSERT OR IGNORE INTO tags (user_id, name) VALUES (?, ?)')
+    for (const row of rows) {
+      try {
+        const arr = JSON.parse(row.tags)
+        if (Array.isArray(arr)) arr.forEach(t => { if (t) insertTag.run(row.user_id, t) })
+      } catch {}
+    }
   }
 }
 
