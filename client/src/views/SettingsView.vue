@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { auth, foods } from '../utils/api'
+import { foods } from '../utils/api'
 import { useAuth } from '../composables/useAuth'
 import { useConfirm } from '../composables/useConfirm'
 import { USER_AGREEMENT_HTML, PRIVACY_POLICY_HTML } from '../utils/agreement'
@@ -10,13 +10,6 @@ import { getBadge } from '../utils/badges'
 const router = useRouter()
 const { user, isAuthenticated, setAuth, logout } = useAuth()
 const showConfirm = useConfirm()
-
-// 编辑资料
-const editing = ref(false)
-const editNickname = ref('')
-const editBio = ref('')
-const saving = ref(false)
-const errMsg = ref('')
 
 // 食品统计
 const foodCount = ref(0)
@@ -133,26 +126,6 @@ const avatarUrl = computed(() => {
 })
 
 const badge = computed(() => getBadge(user.value?.badge))
-
-function startEdit() {
-  editNickname.value = user.value.nickname || ''
-  editBio.value = user.value.bio || ''
-  editing.value = true
-}
-
-async function saveProfile() {
-  saving.value = true
-  errMsg.value = ''
-  try {
-    const updated = await auth.updateProfile({ nickname: editNickname.value, bio: editBio.value })
-    Object.assign(user.value, updated)
-    editing.value = false
-  } catch (e) {
-    errMsg.value = e.message
-  } finally {
-    saving.value = false
-  }
-}
 
 async function handleLogout() {
   const confirmed = await showConfirm({
@@ -299,21 +272,17 @@ onMounted(async () => {
       <!-- 已登录状态 -->
       <div v-else class="space-y-4 pt-2">
         <!-- 用户信息行 -->
-        <button @click="startEdit"
-          class="w-full bg-white rounded-2xl shadow-md border border-gray-100/80 p-4 flex items-center gap-3.5 active:scale-[0.98] transition">
+        <div class="bg-white rounded-2xl shadow-md border border-gray-100/80 p-4 flex items-center gap-3.5">
           <img :src="avatarUrl" alt="头像"
             class="w-14 h-14 rounded-full bg-primary-100 shadow-inner ring-2 ring-primary-100" />
-          <div class="flex-1 min-w-0 text-left">
+          <div class="flex-1 min-w-0">
             <h2 class="font-semibold text-gray-800 text-base truncate flex items-center gap-1.5">
               {{ user.nickname }}
               <span v-if="badge" :class="badge.style">{{ badge.label }}</span>
             </h2>
             <p class="text-xs text-gray-400 mt-0.5 truncate">{{ user.email }}</p>
           </div>
-          <svg class="w-5 h-5 text-gray-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
+        </div>
 
         <!-- 品牌横幅卡 -->
         <div class="bg-gradient-to-br from-primary-500 via-primary-600 to-emerald-600 rounded-2xl p-5 text-white shadow-lg shadow-primary-200/50 relative overflow-hidden">
@@ -333,11 +302,27 @@ onMounted(async () => {
 
         <!-- 个人资料 -->
         <div>
-          <h3 class="text-sm font-semibold text-gray-400 px-1 mb-2">个人资料</h3>
+          <div class="flex items-center justify-between px-1 mb-2">
+            <h3 class="text-sm font-semibold text-gray-400">个人资料</h3>
+            <button @click="router.push('/settings/edit')"
+              class="text-xs text-primary-500 hover:text-primary-600 font-medium transition">编辑</button>
+          </div>
           <div class="bg-white rounded-2xl shadow-sm border border-gray-100/80 overflow-hidden">
+            <!-- 头像行 -->
+            <div class="flex items-center gap-3 px-4 py-3.5">
+              <div class="w-9 h-9 rounded-xl bg-pink-50 flex items-center justify-center shrink-0">
+                <svg class="w-5 h-5 text-pink-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                </svg>
+              </div>
+              <span class="flex-1 text-sm font-medium text-gray-700">头像</span>
+              <img v-if="avatarUrl" :src="avatarUrl" class="w-7 h-7 rounded-full bg-primary-100" alt="头像" />
+            </div>
+
+            <div class="border-t border-gray-100 mx-4"></div>
+
             <!-- 昵称行 -->
-            <div v-if="!editing" @click="startEdit"
-              class="flex items-center gap-3 px-4 py-3.5 active:bg-gray-50 transition cursor-pointer">
+            <div class="flex items-center gap-3 px-4 py-3.5">
               <div class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
                 <svg class="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -345,14 +330,12 @@ onMounted(async () => {
               </div>
               <span class="flex-1 text-sm font-medium text-gray-700">昵称</span>
               <span class="text-sm text-gray-400 truncate max-w-[40%]">{{ user.nickname }}</span>
-              <svg class="w-4 h-4 text-gray-300 shrink-0 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-              </svg>
             </div>
 
+            <div class="border-t border-gray-100 mx-4"></div>
+
             <!-- 个性签名行 -->
-            <div v-if="!editing" @click="startEdit"
-              class="flex items-center gap-3 px-4 py-3.5 active:bg-gray-50 transition cursor-pointer">
+            <div class="flex items-center gap-3 px-4 py-3.5">
               <div class="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
                 <svg class="w-5 h-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
@@ -360,34 +343,6 @@ onMounted(async () => {
               </div>
               <span class="flex-1 text-sm font-medium text-gray-700">个性签名</span>
               <span class="text-sm text-gray-400 truncate max-w-[40%]">{{ user.bio || '未设置' }}</span>
-              <svg class="w-4 h-4 text-gray-300 shrink-0 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-              </svg>
-            </div>
-
-            <!-- 编辑表单区域 -->
-            <div v-if="editing" class="px-4 pb-4 space-y-3 border-t border-gray-100 pt-4 mt-1">
-              <div>
-                <label class="block text-xs text-gray-400 mb-1">昵称</label>
-                <input v-model="editNickname"
-                  class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-transparent" />
-              </div>
-              <div>
-                <label class="block text-xs text-gray-400 mb-1">个性签名</label>
-                <input v-model="editBio" placeholder="写点什么..."
-                  class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-transparent" />
-              </div>
-              <div v-if="errMsg" class="text-red-500 text-xs">{{ errMsg }}</div>
-              <div class="flex gap-2 pt-1">
-                <button @click="saveProfile" :disabled="saving"
-                  class="flex-1 bg-primary-500 hover:bg-primary-600 disabled:bg-gray-300 text-white py-2.5 rounded-xl text-sm font-medium transition">
-                  {{ saving ? '保存中...' : '保存' }}
-                </button>
-                <button @click="editing = false; errMsg = ''"
-                  class="px-5 py-2.5 rounded-xl text-sm text-gray-500 hover:bg-gray-100 transition font-medium">
-                  取消
-                </button>
-              </div>
             </div>
 
             <!-- 邮箱（只读） -->
@@ -428,7 +383,7 @@ onMounted(async () => {
                 </svg>
               </div>
               <span class="flex-1 text-sm font-medium text-gray-700">当前版本</span>
-              <span class="text-sm text-gray-400">v2.1.2-alpha</span>
+              <span class="text-sm text-gray-400">v2.1.3-alpha</span>
             </div>
 
             <div class="border-t border-gray-100 mx-4"></div>

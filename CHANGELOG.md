@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2.1.3-alpha] - 2026-05-20
+
+### Added
+
+- Edit profile secondary page — avatar selection (9-grid), nickname/bio editing, save
+- "Edit" button on settings page — replaces old inline editing
+
+### Changed
+
+- Settings page interaction redesign — profile rows are now read-only, editing goes through secondary page
+- Avatar picker panel matches registration style — compact bottom sheet
+
+### Fixed
+
+- localStorage not synced after saving profile — changes no longer lost on refresh
+
+---
+
 ## [2.1.2-alpha] - 2026-05-20
 
 ### Added
