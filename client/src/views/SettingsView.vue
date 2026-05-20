@@ -8,6 +8,7 @@ import { USER_AGREEMENT_HTML, PRIVACY_POLICY_HTML } from '../utils/agreement'
 import { getBadge } from '../utils/badges'
 import { logger } from '../utils/logger'
 
+const appVersion = __APP_VERSION__
 const router = useRouter()
 const { user, isAuthenticated, setAuth, logout } = useAuth()
 const showConfirm = useConfirm()
@@ -459,7 +460,7 @@ onMounted(async () => {
                 </svg>
               </div>
               <span class="flex-1 text-sm font-medium text-gray-700">当前版本</span>
-              <span class="text-sm text-gray-400">v{{ __APP_VERSION__ }}</span>
+              <span class="text-sm text-gray-400">v{{ appVersion }}</span>
             </div>
 
             <div class="border-t border-gray-100 mx-4"></div>

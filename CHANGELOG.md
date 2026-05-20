@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2.5.2-alpha] - 2026-05-20
+
+### Fixed
+
+- Settings page version number not displaying due to `__APP_VERSION__` not exposed to Vue template
+
+---
+
 ## [2.5.1-alpha] - 2026-05-20
 
 ### Fixed
