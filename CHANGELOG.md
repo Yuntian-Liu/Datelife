@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2.5.4-alpha] - 2026-05-20
+
+### Fixed
+
+- Scan page camera video abnormally zoomed in (removed `object-fit: cover` CSS)
+- Barcode scan viewfinder too narrow (width doubled)
+
+---
+
 ## [2.5.3-alpha] - 2026-05-20
 
 ### Fixed

@@ -24,7 +24,7 @@ onMounted(async () => {
   const config = mode === 'barcode'
     ? {
         fps: 15,
-        qrbox: { width: isMobile ? 280 : 360, height: isMobile ? 80 : 100 },
+        qrbox: { width: isMobile ? 560 : 720, height: isMobile ? 80 : 100 },
         aspectRatio: isMobile ? Math.min(screenRatio * 1.8, 2) : 1.777,
         experimentalFeatures: { useBarCodeDetectorIfSupported: true },
         formatsToSupport: [
@@ -155,13 +155,6 @@ function goBack() {
   align-items: center !important;
   justify-content: center !important;
   overflow: hidden;
-}
-
-/* 强制摄像头视频铺满容器，消除黑边 */
-#scanner video {
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: cover !important;
 }
 </style>
 
