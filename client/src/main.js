@@ -5,7 +5,7 @@ import router from './router'
 
 createApp(App).use(router).mount('#app')
 
-// PWA Service Worker
-if ('serviceWorker' in navigator) {
+// PWA Service Worker（仅生产模式）
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
   navigator.serviceWorker.register('/sw.js').catch(() => {})
 }
