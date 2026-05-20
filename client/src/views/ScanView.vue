@@ -147,22 +147,12 @@ function goBack() {
 </template>
 
 <style>
-/* 非 scoped：强制 html5-qrcode 内部元素居中 */
+/* 非 scoped：强制 html5-qrcode 居中，不覆盖视频/内部布局避免二维码变形 */
 #scanner {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   overflow: hidden;
-}
-
-#scanner > div {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-
-#scanner video {
-  object-fit: cover !important;
 }
 </style>
 

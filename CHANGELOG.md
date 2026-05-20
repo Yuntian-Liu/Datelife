@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2.5.1-alpha] - 2026-05-20
+
+### Fixed
+
+- QR code scan viewfinder: square aspect ratio restored and centered on screen
+
+---
+
 ## [2.5.0-alpha] - 2026-05-20
 
 ### Added
