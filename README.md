@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-2.7.0--alpha-blue" alt="Version" />
+  <img src="https://img.shields.io/badge/Version-2.7.1--alpha-blue" alt="Version" />
   <img src="https://img.shields.io/badge/Vue-3.x-4FC08D?logo=vue.js&logoColor=white" alt="Vue" />
   <img src="https://img.shields.io/badge/Express-Node.js-000000?logo=express&logoColor=white" alt="Express" />
   <img src="https://img.shields.io/badge/SQLite-better--sqlite3-003B57?logo=sqlite&logoColor=white" alt="SQLite" />
@@ -162,13 +162,14 @@ Datelife/
 - [x] MVP: Food CRUD + status calculation + QR codes + responsive layout
 - [x] P1: Auth system (email verification + password login) + Badge system
 - [x] P2: Settings page redesign + Data management (export/import) + PWA support
-- [ ] P3: Barcode recognition, category filters, expiration alerts, batch entry
+- [x] P3: Barcode recognition, category filters (via tags)
+- [ ] P3: Expiration alerts, batch entry, image upload
 
 ## Try It Out
 
 Feel free to try Datelife! If you're also struggling with food expiration management, give it a spin.
 
-- Online demo (coming after deployment)
+- Online demo: [datelife.ytunx.com](https://datelife.ytunx.com)
 - Local setup: see "Quick Start" section above
 
 ## Feedback & Contributions

@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2.7.1-alpha] - 2026-05-21
+
+### Improved
+
+- User agreement layout: feature list changed to `<ul>` items, account security responsibilities split into list items, data management section split into paragraphs
+- Privacy policy layout: diagnostic log paragraph split into 3 sections, fixed HTML structure bug (missing closing tags in Section 7)
+- README roadmap P3 update: checked off completed barcode recognition and tag system (category filters)
+- README added online demo link: datelife.ytunx.com
+- Agreement & privacy policy last updated date refreshed to 2026-05-21
+- Changelog dialog restructured: extracted data into standalone `changelog.js` with full history of 21 versions
+- Changelog dropdown grouped by minor version (2.7.x / 2.6 / 2.5.x …) with collapsible groups
+- Changelog content area now dynamically renders selected version, keeping dialog height fixed
+
+### Fixed
+
+- Missing `</p>` and `</div>` closing tags at end of privacy policy Section 7, could cause display issues for subsequent sections
+
+---
+
 ## [2.7.0-alpha] - 2026-05-21
 
 ### Added

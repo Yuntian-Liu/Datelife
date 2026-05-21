@@ -163,6 +163,14 @@ const agreementType = ref('agreement')
 // 关于详情弹窗
 const showAbout = ref(false)
 const showChangelog = ref(false)
+const selectedChangelog = ref('v2.7.1-alpha')
+const showVersionDropdown = ref(false)
+
+import { changelogData, getGroupedVersions } from '../utils/changelog.js'
+
+const groupedVersions = getGroupedVersions()
+const currentChangelog = computed(() => changelogData[selectedChangelog.value])
+const collapsedGroups = ref(Object.fromEntries(Object.keys(groupedVersions).map(g => [g, g !== '2.7.x'])))
 
 const avatarUrl = computed(() => {
   if (!user.value?.avatar_seed) return ''
@@ -673,41 +681,56 @@ onMounted(async () => {
               </button>
               <h2 class="text-lg font-semibold font-brand">版本日志</h2>
             </div>
-            <span class="text-xs text-gray-400">v{{ appVersion }}</span>
+            <div class="relative">
+              <button @click.stop="showVersionDropdown = !showVersionDropdown"
+                class="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition px-2 py-1 rounded-lg hover:bg-gray-100">
+                <span>{{ selectedChangelog }}</span>
+                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-cap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                </svg>
+              </button>
+              <div v-if="showVersionDropdown"
+                class="absolute right-0 mt-1 bg-white rounded-xl shadow-lg border border-gray-100 py-1 min-w-[200px] z-50 max-h-[300px] overflow-y-auto">
+                <template v-for="(versions, group) in groupedVersions" :key="group">
+                  <button @click.stop="collapsedGroups[group] = !collapsedGroups[group]"
+                    class="w-full text-left px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider flex items-center gap-1 hover:bg-gray-50 transition sticky top-0 bg-white z-10"
+                    :class="collapsedGroups[group] ? 'text-gray-400' : 'text-gray-600'">
+                    <svg class="w-2.5 h-2.5 transition-transform duration-150" :class="collapsedGroups[group] ? '' : 'rotate-90'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                      <path stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                    </svg>
+                    {{ group }}
+                  </button>
+                  <div v-show="!collapsedGroups[group]">
+                    <button v-for="v in versions" :key="v.version"
+                      @click.stop="selectedChangelog = v.version; showVersionDropdown = false"
+                      class="w-full text-left px-4 py-1.5 text-xs hover:bg-gray-50 transition flex items-center justify-between"
+                      :class="selectedChangelog === v.version ? 'text-green-600 font-medium' : 'text-gray-600'">
+                      <span>{{ v.version }}</span>
+                      <span class="text-gray-400 text-[10px]">{{ v.date.slice(5) }}</span>
+                    </button>
+                  </div>
+                </template>
+              </div>
+            </div>
           </div>
-          <div class="p-5 overflow-y-auto text-sm text-gray-500 leading-relaxed space-y-4">
-            <div>
-              <h3 class="text-xs font-semibold text-gray-700 mb-2">v2.7.0-alpha · 2026-05-21</h3>
-              <div class="space-y-2">
-                <div>
-                  <p class="text-xs font-medium text-green-600 mb-1">新增</p>
+          <div class="p-5 overflow-y-auto text-sm text-gray-500 leading-relaxed" @click="showVersionDropdown = false">
+            <template v-if="currentChangelog">
+              <h3 class="text-xs font-semibold text-gray-700 mb-2">{{ selectedChangelog }} · {{ currentChangelog.date }}</h3>
+              <div class="space-y-3">
+                <div v-for="(section, idx) in currentChangelog.sections" :key="idx">
+                  <p class="text-xs font-medium mb-1"
+                    :class="{
+                      'text-green-600': section.color === 'green',
+                      'text-blue-600': section.color === 'blue',
+                      'text-red-500': section.color === 'red',
+                      'text-gray-500': section.color === 'gray'
+                    }">{{ section.type }}</p>
                   <ul class="text-xs text-gray-500 space-y-0.5 list-disc pl-4">
-                    <li>标签持久化系统：标签独立存储，移除食品标签不会全局删除</li>
-                    <li>标签管理页 8 标签上限 + 新建标签 API</li>
-                    <li>排序切换：搜索框旁胶囊形排序器（添加时间 / 到期紧急）</li>
-                    <li>关于详情页：开发者信息、GitHub 开源、反馈邮箱、版本日志</li>
-                  </ul>
-                </div>
-                <div>
-                  <p class="text-xs font-medium text-blue-600 mb-1">优化</p>
-                  <ul class="text-xs text-gray-500 space-y-0.5 list-disc pl-4">
-                    <li>移动端二维码卡片 3 位数字显示剩余天数</li>
-                    <li>移动端筛选栏三字按钮自适应换行</li>
-                    <li>移动端食品卡片两行布局、标签筛选面板右对齐</li>
-                    <li>搜索框改为胶囊形，视觉统一</li>
-                    <li>条形码扫描器性能优化</li>
-                    <li>诊断日志全面覆盖标签、排序、扫码、导出等功能</li>
-                    <li>用户协议与隐私政策更新</li>
-                  </ul>
-                </div>
-                <div>
-                  <p class="text-xs font-medium text-red-500 mb-1">修复</p>
-                  <ul class="text-xs text-gray-500 space-y-0.5 list-disc pl-4">
-                    <li>食品详情页返回按钮导航错误</li>
+                    <li v-for="(item, i) in section.items" :key="i">{{ item }}</li>
                   </ul>
                 </div>
               </div>
-            </div>
+            </template>
           </div>
         </div>
       </div>

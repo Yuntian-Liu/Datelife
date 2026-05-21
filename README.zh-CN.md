@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-2.7.0--alpha-blue" alt="Version" />
+  <img src="https://img.shields.io/badge/Version-2.7.1--alpha-blue" alt="Version" />
   <img src="https://img.shields.io/badge/Vue-3.x-4FC08D?logo=vue.js&logoColor=white" alt="Vue" />
   <img src="https://img.shields.io/badge/Express-Node.js-000000?logo=express&logoColor=white" alt="Express" />
   <img src="https://img.shields.io/badge/SQLite-better--sqlite3-003B57?logo=sqlite&logoColor=white" alt="SQLite" />
@@ -162,13 +162,14 @@ Datelife/
 - [x] MVP：食品 CRUD + 状态计算 + 二维码 + 响应式布局
 - [x] P1：认证系统（邮箱验证码 + 密码登录）+ 徽章系统
 - [x] P2：设置页重构 + 数据管理（导入/导出）+ PWA 支持
-- [ ] P3：条形码识别、分类筛选、临期提醒、批量录入
+- [x] P3：条形码识别、分类筛选（标签系统）
+- [ ] P3：临期提醒、批量录入、图片上传
 
 ## 体验使用
 
 欢迎体验 Datelife！如果你也在为食品保质期管理头疼，不妨试试这个工具。
 
-- 在线演示（部署后补充）
+- 在线演示：[datelife.ytunx.com](https://datelife.ytunx.com)
 - 本地运行请参考上方「快速开始」部分
 
 ## 反馈与贡献
