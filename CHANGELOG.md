@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2.8.2-alpha] - 2026-05-22
+
+### Added
+
+- QR code PDF printing: download A4 layout PDF, 5-column grid (30/pg), branded title + diagonal watermark, multi-page auto-pagination
+
+### Changed
+
+- Food management filter state persistence: filter/tag/search/sort state synced to URL query params, auto-restored on back navigation
+
+---
+
 ## [2.8.1-alpha] - 2026-05-21
 
 ### Fixed

@@ -34,8 +34,11 @@ const showForm = ref(false)
 const editing = ref(null)
 const form = ref({ name: '', produce_date: '', shelf_life_days: '' })
 const errMsg = ref('')
-const filter = ref('all')
-const searchQuery = ref('')
+const filter = ref(
+  route.query.filter && ['normal', 'expiring', 'expired'].includes(route.query.filter)
+    ? route.query.filter : 'all'
+)
+const searchQuery = ref(route.query.q || '')
 const scanStatus = ref('')
 const showScanPicker = ref(false)
 
@@ -43,12 +46,14 @@ const showScanPicker = ref(false)
 const tagInput = ref('')
 const formTags = ref([])
 const allTags = ref([])
-const selectedFilterTags = ref([])
+const selectedFilterTags = ref(
+  route.query.tags ? route.query.tags.split(',').filter(Boolean) : []
+)
 const showTagFilter = ref(false)
 const showTagLimitModal = ref(false)
 
 // 排序：time = 添加时间（默认），expiry = 到期紧急程度
-const sortBy = ref('time')
+const sortBy = ref(route.query.sort === 'expiry' ? 'expiry' : 'time')
 
 // 保质期单位切换
 const shelfLifeUnit = ref('天')
@@ -152,17 +157,34 @@ onMounted(async () => {
     const food = foodList.value.find(f => String(f.id) === editId)
     if (food) {
       openEdit(food)
-      router.replace({ path: '/foods', query: {} })
+      const eq = { ...route.query }; delete eq.edit; router.replace({ query: eq })
     }
   }
   // 处理从扫码页带回的结果
   handleScanResult()
   // 处理从扫码页手动返回（未扫到结果）
   if (route.query.fromScan === '1') {
-    router.replace({ path: '/foods', query: {} })
+    const fq = { ...route.query }; delete fq.fromScan; router.replace({ query: fq })
     openAdd()
   }
 })
+
+// 筛选状态变化时同步到 URL
+watch(
+  () => [filter.value, selectedFilterTags.value.join(','), searchQuery.value, sortBy.value],
+  () => { syncFiltersToQuery() }
+)
+
+// URL query 变化时同步回筛选状态（如点击底部导航 /foods 重置筛选）
+watch(
+  () => [route.query.filter, route.query.tags, route.query.q, route.query.sort],
+  ([f, t, q, s]) => {
+    filter.value = (f && ['normal', 'expiring', 'expired'].includes(f)) ? f : 'all'
+    selectedFilterTags.value = t ? t.split(',').filter(Boolean) : []
+    searchQuery.value = q || ''
+    sortBy.value = s === 'expiry' ? 'expiry' : 'time'
+  }
+)
 
 // 监听路由变化，处理扫码返回
 watch(() => route.query.scanResult, (val) => {
@@ -172,7 +194,7 @@ watch(() => route.query.scanResult, (val) => {
 // 监听扫码页手动返回
 watch(() => route.query.fromScan, (val) => {
   if (val === '1') {
-    router.replace({ path: '/foods', query: {} })
+    const fq2 = { ...route.query }; delete fq2.fromScan; router.replace({ query: fq2 })
     openAdd()
   }
 })
@@ -180,8 +202,7 @@ watch(() => route.query.fromScan, (val) => {
 async function handleScanResult() {
   const result = route.query.scanResult
   if (!result) return
-  // 清除 URL 中的 query 参数
-  router.replace({ path: '/foods', query: {} })
+  const sq = { ...route.query }; delete sq.scanResult; router.replace({ query: sq })
   const decodedText = decodeURIComponent(result)
   scanStatus.value = '正在查询...'
   resetForm()
@@ -314,6 +335,23 @@ const filterOptions = [
   { key: 'expired', label: '已过期' },
   { key: 'tags', label: '标签' }
 ]
+
+function syncFiltersToQuery() {
+  const query = {}
+  if (filter.value !== 'all' && filter.value !== 'tags') {
+    query.filter = filter.value
+  }
+  if (selectedFilterTags.value.length > 0) {
+    query.tags = selectedFilterTags.value.join(',')
+  }
+  if (searchQuery.value) {
+    query.q = searchQuery.value
+  }
+  if (sortBy.value !== 'time') {
+    query.sort = sortBy.value
+  }
+  router.replace({ query })
+}
 </script>
 
 <template>

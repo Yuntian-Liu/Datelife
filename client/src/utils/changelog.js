@@ -1,4 +1,5 @@
 export const changelogVersions = [
+  { version: 'v2.8.2-alpha', date: '2026-05-22', group: '2.8.x' },
   { version: 'v2.8.1-alpha', date: '2026-05-21', group: '2.8.x' },
   { version: 'v2.8.0-alpha', date: '2026-05-21', group: '2.8.x' },
   { version: 'v2.7.1-alpha', date: '2026-05-21', group: '2.7.x' },
@@ -25,6 +26,25 @@ export const changelogVersions = [
 ]
 
 export const changelogData = {
+  'v2.8.2-alpha': {
+    date: '2026-05-22',
+    sections: [
+      {
+        type: '新增',
+        color: 'green',
+        items: [
+          '二维码 PDF 打印：下载 A4 排列 PDF，5 列网格排版（30 个/页），品牌标题 + 斜铺水印，支持多页自动分页'
+        ]
+      },
+      {
+        type: '优化',
+        color: 'blue',
+        items: [
+          '食品管理筛选状态持久化：筛选/标签/搜索/排序状态写入 URL query，返回页面时自动恢复'
+        ]
+      }
+    ]
+  },
   'v2.8.1-alpha': {
     date: '2026-05-21',
     sections: [
