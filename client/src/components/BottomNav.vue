@@ -62,10 +62,14 @@ const badge = computed(() => getBadge(user.value?.badge))
         >
           <!-- 已登录时显示头像 -->
           <div v-if="isAuthenticated && avatarUrl" class="relative">
-            <img :src="avatarUrl"
+            <template v-if="badge">
+              <div class="rounded-full p-[1.5px] bg-gradient-to-r" :class="badge.ringColor">
+                <img :src="avatarUrl"
+                  class="w-6 h-6 rounded-full bg-white shadow-sm" alt="头像" />
+              </div>
+            </template>
+            <img v-else :src="avatarUrl"
               class="w-6 h-6 rounded-full bg-primary-100 shadow-sm" alt="头像" />
-            <span v-if="badge" class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border border-white shadow-sm"
-              :class="badge?.label === '开发者' ? 'bg-amber-400' : badge?.label === '内测' ? 'bg-emerald-400' : 'bg-violet-400'"></span>
           </div>
           <svg v-else class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />

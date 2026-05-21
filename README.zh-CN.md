@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-2.7.1--alpha-blue" alt="Version" />
+  <img src="https://img.shields.io/badge/Version-2.8.0--alpha-blue" alt="Version" />
   <img src="https://img.shields.io/badge/Vue-3.x-4FC08D?logo=vue.js&logoColor=white" alt="Vue" />
   <img src="https://img.shields.io/badge/Express-Node.js-000000?logo=express&logoColor=white" alt="Express" />
   <img src="https://img.shields.io/badge/SQLite-better--sqlite3-003B57?logo=sqlite&logoColor=white" alt="SQLite" />
@@ -33,12 +33,14 @@
 | 食品录入 | 名称 + 生产日期 + 保质期天数 → 自动计算过期日期 |
 | 状态判断 | **可食用** (>14天) / **临期** (≤14天) / **已过期** |
 | 二维码生成 | 每个食品专属二维码，扫码直达详情页 |
+| 条形码扫描 | apibyte.cn API 识别条码 + 二维码扫描器 |
+| 标签系统 | 自定义标签全局持久存储，最多 8 个标签，标签筛选 |
 | 详情展示 | 完整信息 + 状态 + 可打印二维码 |
 | 编辑删除 | 随时修改或移除记录 |
-| 用户认证 | 邮箱验证码登录 + 密码登录 |
-| 徽章系统 | 开发者/内测/共创者徽章标识 |
+| 用户认证 | 邮箱验证码 + 密码双模式登录 + 邀请码注册系统 |
+| 徽章系统 | 开发者/内测/共创者徽章 + 渐变光环标记 |
 | 数据导入导出 | JSON 格式备份，支持去重 |
-| PWA 支持 | 可添加到桌面，离线缓存 |
+| PWA 支持 | 可添加到桌面，Service Worker 离线缓存 |
 
 ### 响应式设计
 
@@ -117,41 +119,55 @@ Datelife/
 ├── client/                    # Vue 3 前端
 │   ├── src/
 │   │   ├── main.js           # 入口 + Service Worker 注册
-│   │   ├── App.vue           # 根组件
+│   │   ├── App.vue           # 根组件 + 全局弹窗
 │   │   ├── router/index.js   # 路由配置
 │   │   ├── utils/
 │   │   │   ├── api.js        # API 封装（auth、foods、barcode）
-│   │   │   ├── badges.js     # 徽章定义
-│   │   │   └── agreement.js  # 用户协议 / 隐私政策 HTML
+│   │   │   ├── badges.js     # 徽章定义（开发者/内测/共创者）
+│   │   │   ├── agreement.js  # 用户协议 / 隐私政策 HTML
+│   │   │   ├── betaAgreement.js # 内测协议 HTML
+│   │   │   ├── changelog.js  # 版本日志数据（22 个版本）
+│   │   │   └── logger.js     # 诊断日志（API 调用、路由、导出）
 │   │   ├── composables/      # Vue 组合式函数
-│   │   │   ├── useAuth.js    # 认证状态管理
-│   │   │   └── useConfirm.js # 确认弹窗组合式函数
+│   │   │   ├── useAuth.js    # 全局认证状态单例
+│   │   │   └── useConfirm.js # 确认弹窗
 │   │   ├── components/       # 可复用组件
-│   │   │   ├── BottomNav.vue  # 移动端浮动导航栏
+│   │   │   ├── BottomNav.vue  # 移动端胶囊导航栏
+│   │   │   ├── DesktopHeader.vue # 桌面端顶部导航
 │   │   │   ├── ConfirmDialog.vue
+│   │   │   ├── Watermark.vue  # 开发水印
 │   │   │   └── TurnstileWidget.vue
 │   │   └── views/
-│   │       ├── HomeView.vue  # 首页（表格/卡片双视图）
-│   │       ├── FoodDetail.vue # 详情页（含二维码）
-│   │       └── SettingsView.vue # 设置页（含数据管理）
+│   │       ├── HomeView.vue  # 首页（仪表盘双视图）
+│   │       ├── FoodDetail.vue # 食品详情（含二维码）
+│   │       ├── ScanView.vue  # 全屏扫码器
+│   │       ├── QRCodesView.vue # 二维码批量打印
+│   │       ├── EditProfile.vue # 资料编辑页
+│   │       ├── AboutView.vue # 关于页
+│   │       ├── LoginView.vue  # 登录/注册向导
+│   │       └── SettingsView.vue # 设置页
 │   ├── public/
 │   │   ├── manifest.json     # PWA 清单
 │   │   ├── sw.js            # Service Worker
-│   │   └── favicon.svg      # 应用图标（便当 emoji）
+│   │   └── favicon.png      # 应用图标
 │   └── vite.config.js        # Vite 配置（Tailwind + 代理）
 │
 ├── server/                    # Express 后端
-│   ├── index.js              # 入口（含生产环境静态文件服务）
+│   ├── index.js              # 入口（生产环境 serve 静态文件）
+│   ├── manage.js             # 数据库管理 CLI（需 --yes 确认）
 │   ├── routes/
-│   │   ├── foods.js          # 食品 CRUD + 二维码接口
-│   │   ├── barcode.js        # 条形码查询接口
-│   │   └── auth.js           # 认证接口（登录、注册、资料）
+│   │   ├── foods.js          # 食品 CRUD + 二维码 + 标签
+│   │   ├── barcode.js        # 条形码查询代理
+│   │   └── auth.js           # 认证（登录、注册、资料、邀请码）
 │   ├── lib/
-│   │   ├── db.js             # SQLite 数据库层
+│   │   ├── db.js             # SQLite（5 张表 + 自动迁移）
 │   │   ├── jwt.js            # JWT Token 工具
-│   │   └── email.js         # Resend 邮件发送
+│   │   ├── email.js         # Resend 邮件（开发模式免发）
+│   │   └── qrcode.js         # 二维码生成
 │   └── middleware/
-│       └── auth.js           # 认证中间件（必选 / 可选）
+│       ├── auth.js           # 认证中间件（必选/可选）
+│       ├── turnstile.js      # Turnstile 人机验证
+│       └── rateLimit.js      # IP 滑动窗口限流
 │
 ├── DEVELOPMENT.md             # 开发文档
 └── .env.example              # 环境变量模板
@@ -160,10 +176,11 @@ Datelife/
 ## 路线图
 
 - [x] MVP：食品 CRUD + 状态计算 + 二维码 + 响应式布局
-- [x] P1：认证系统（邮箱验证码 + 密码登录）+ 徽章系统
+- [x] P1：认证系统（邮箱 + 密码 + 邀请码）+ 徽章系统 + 用户协议
 - [x] P2：设置页重构 + 数据管理（导入/导出）+ PWA 支持
-- [x] P3：条形码识别、分类筛选（标签系统）
-- [ ] P3：临期提醒、批量录入、图片上传
+- [x] P3：条形码识别、标签系统、版本日志查看器、扫码页面
+- [x] P4：邀请码注册、内测协议、数据库管理 CLI
+- [ ] 未来：临期提醒、批量录入、图片上传
 
 ## 体验使用
 

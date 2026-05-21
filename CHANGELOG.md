@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2.8.0-alpha] - 2026-05-21
+
+### Added
+
+- Invite code registration system: INVITE_MODE env var toggle + 5 seed invite codes, check-email / verify-invite endpoints
+- Beta agreement (betaAgreement.js): standalone HTML document, inline display in invite code input area
+- Database management script server/manage.js: SQLite operations via Node.js with --yes confirmation guard
+- Login page verification code / password tab switcher with URL query parameter sync
+
+### Improved
+
+- Badge system UI overhaul: dots replaced with gradient ring borders, unified across all avatar locations
+- User agreement & privacy policy: added invite code registration info + invite code data collection notice
+- Diagnostic logs: added userBadge field for better badge issue troubleshooting
+- Development docs: added invite code system + database management tool chapters, updated badge operations guide
+
+### Fixed
+
+- Invite code validation SQL: `datetime("now")` double-quotes treated as column name by SQLite
+- LoginView.vue invite code area template nesting error causing invite input to not render
+
+---
+
 ## [2.7.1-alpha] - 2026-05-21
 
 ### Improved

@@ -61,6 +61,17 @@ function initTables() {
       created_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
       UNIQUE(user_id, name)
     );
+
+    CREATE TABLE IF NOT EXISTS invite_codes (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      code        TEXT UNIQUE NOT NULL,
+      used_by     INTEGER,
+      used_at     TEXT,
+      expires_at  TEXT,
+      max_uses    INTEGER DEFAULT 1,
+      use_count   INTEGER DEFAULT 0,
+      created_at  TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+    );
   `)
 
   // 给 foods 表添加 user_id 列（如果不存在）
@@ -102,6 +113,14 @@ function initTables() {
         if (Array.isArray(arr)) arr.forEach(t => { if (t) insertTag.run(row.user_id, t) })
       } catch {}
     }
+  }
+
+  // 种子邀请码（仅表为空时插入）
+  const inviteCount = db.prepare('SELECT COUNT(*) AS c FROM invite_codes').get()
+  if (inviteCount.c === 0) {
+    const insertInvite = db.prepare('INSERT INTO invite_codes (code, max_uses) VALUES (?, 1)')
+    const seeds = ['datelife-alpha-2026', 'early-bird-2026', 'inner-test-001', 'inner-test-002', 'inner-test-003']
+    seeds.forEach(code => insertInvite.run(code))
   }
 }
 

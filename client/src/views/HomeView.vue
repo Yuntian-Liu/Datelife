@@ -74,11 +74,18 @@ function avatarUrl(seed) {
         <!-- 问候卡片 -->
         <div v-if="user" class="bg-white rounded-2xl shadow-md border border-gray-100/80 p-5 mb-6 flex items-center gap-4">
           <div class="relative shrink-0">
-            <img v-if="user.avatar_seed" :src="avatarUrl(user.avatar_seed)"
-              class="w-14 h-14 rounded-full bg-primary-100 shadow-sm" alt="头像" />
-            <div v-else class="w-14 h-14 rounded-full bg-primary-100 flex items-center justify-center text-2xl">🍱</div>
-            <span v-if="badge" class="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white shadow-sm"
-              :class="badge?.label === '开发者' ? 'bg-amber-400' : badge?.label === '内测' ? 'bg-emerald-400' : 'bg-violet-400'"></span>
+            <template v-if="badge">
+              <div class="rounded-full p-[2.5px] bg-gradient-to-r shadow-sm" :class="badge.ringColor">
+                <img v-if="user.avatar_seed" :src="avatarUrl(user.avatar_seed)"
+                  class="w-14 h-14 rounded-full bg-white shadow-sm" alt="头像" />
+                <div v-else class="w-14 h-14 rounded-full bg-white flex items-center justify-center text-2xl">🍱</div>
+              </div>
+            </template>
+            <template v-else>
+              <img v-if="user.avatar_seed" :src="avatarUrl(user.avatar_seed)"
+                class="w-14 h-14 rounded-full bg-primary-100 shadow-sm" alt="头像" />
+              <div v-else class="w-14 h-14 rounded-full bg-primary-100 flex items-center justify-center text-2xl">🍱</div>
+            </template>
           </div>
           <div class="flex-1 min-w-0">
             <h2 class="text-lg font-semibold text-gray-800 truncate">你好，{{ user.nickname }}</h2>

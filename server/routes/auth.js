@@ -47,14 +47,69 @@ router.post('/send-code', sendCodeLimiter, requireTurnstile, async (req, res) =>
   }
 })
 
+// POST /api/auth/check-email — 检查邮箱状态（发验证码前调用）
+router.post('/check-email', (req, res) => {
+  const { email } = req.body
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ error: '请输入有效的邮箱地址' })
+  }
+
+  const db = getDb()
+  const user = db.prepare('SELECT id FROM users WHERE email = ?').get(email)
+
+  if (user) {
+    // 已注册 → 直接可以登录
+    res.json({ exists: true, needInvite: false })
+  } else if (process.env.INVITE_MODE === 'true') {
+    // 未注册 + 邀请码模式 → 需要邀请码
+    res.json({ exists: false, needInvite: true })
+  } else {
+    // 未注册 + 公开模式 → 正常注册流程
+    res.json({ exists: false, needInvite: false })
+  }
+})
+
+// POST /api/auth/verify-invite — 校验邀请码（不发邮件，仅预检）
+router.post('/verify-invite', (req, res) => {
+  const { code: inviteCode } = req.body
+  if (!inviteCode) {
+    return res.status(400).json({ error: '请输入邀请码' })
+  }
+
+  const db = getDb()
+  const row = db.prepare(
+    "SELECT * FROM invite_codes WHERE code = ? AND (expires_at IS NULL OR expires_at > datetime('now','localtime'))"
+  ).get(inviteCode)
+
+  if (!row) {
+    return res.status(400).json({ error: '邀请码无效或已过期' })
+  }
+  if (row.use_count >= row.max_uses) {
+    return res.status(400).json({ error: '邀请码使用次数已达上限' })
+  }
+
+  // 仅返回校验通过，不扣减次数（注册成功时才标记）
+  res.json({ valid: true })
+})
+
 // POST /api/auth/login-code — 验证码登录
 router.post('/login-code', (req, res) => {
-  const { email, code } = req.body
+  const { email, code, invite_code: clientInviteCode } = req.body
   if (!email || !code) {
     return res.status(400).json({ error: '邮箱和验证码不能为空' })
   }
 
   const db = getDb()
+
+  // 如果带了邀请码标记，说明是拦截后的重试，需要先校验邀请码
+  if (clientInviteCode) {
+    const inviteRow = db.prepare(
+      "SELECT * FROM invite_codes WHERE code = ? AND (expires_at IS NULL OR expires_at > datetime('now','localtime'))"
+    ).get(clientInviteCode)
+    if (!inviteRow || inviteRow.use_count >= inviteRow.max_uses) {
+      return res.status(400).json({ error: '邀请码无效或已过期' })
+    }
+  }
 
   // 查验证码
   const vc = db.prepare('SELECT * FROM verification_codes WHERE email = ?').get(email)
@@ -117,7 +172,7 @@ router.post('/login-password', (req, res) => {
 
 // POST /api/auth/register — 注册（新用户填完昵称密码后）
 router.post('/register', (req, res) => {
-  const { email, code, nickname, password, bio, avatar_seed: clientAvatarSeed } = req.body
+  const { email, code, nickname, password, bio, avatar_seed: clientAvatarSeed, invite_code: clientInviteCode } = req.body
   if (!email || !code || !nickname || !password) {
     return res.status(400).json({ error: '所有字段都不能为空' })
   }
@@ -149,6 +204,14 @@ router.post('/register', (req, res) => {
     INSERT INTO users (uid, email, nickname, avatar_seed, bio, password_hash, salt)
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `).run(uid, email, nickname, avatar_seed, bio || '', passwordHash, salt)
+
+  // 标记邀请码已用（如果有）
+  if (clientInviteCode) {
+    db.prepare(`
+      UPDATE invite_codes SET used_by = ?, used_at = datetime('now','localtime'), use_count = use_count + 1
+      WHERE code = ?
+    `).run(uid, clientInviteCode)
+  }
 
   // 清除验证码
   db.prepare('DELETE FROM verification_codes WHERE email = ?').run(email)

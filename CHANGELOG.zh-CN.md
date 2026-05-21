@@ -4,6 +4,29 @@
 
 ---
 
+## [2.8.0-alpha] - 2026-05-21
+
+### 新增
+
+- 邀请码注册系统：INVITE_MODE 环境变量开关 + 5 个种子邀请码（datelife-alpha-2026 / early-bird-2026 / inner-test-001~003）
+- check-email / verify-invite 新接口：发送验证码前拦截校验，避免无效邮件发送
+- 内测协议（betaAgreement.js）：独立 HTML 文档，邀请码输入区内联展示
+- 数据库管理脚本 server/manage.js：Node.js 直接操作 SQLite，写操作需 --yes 确认
+- 登录页验证码/密码 Tab 切换器，URL query 参数同步模式状态
+
+### 优化
+
+- 徽章系统 UI 重构：圆点标记改为渐变光环边框，所有头像位置效果统一
+- 用户协议与隐私政策：新增邀请码注册说明 + 邀请码数据收集声明
+- 诊断日志新增 userBadge 字段，辅助排查徽章显示问题
+
+### 修复
+
+- 邀请码验证 SQL 中 datetime("now") 双引号被 SQLite 当列名的错误
+- LoginView.vue 邀请码区域模板嵌套错误，邀请码输入框无法正常显示
+
+---
+
 ## [2.7.1-alpha] - 2026-05-21
 
 ### 优化

@@ -68,5 +68,13 @@ export const auth = {
   devLogin: (uid) => request('/auth/dev-login', {
     method: 'POST',
     body: JSON.stringify({ uid })
+  }),
+  checkEmail: (email) => request('/auth/check-email', {
+    method: 'POST',
+    body: JSON.stringify({ email })
+  }),
+  verifyInvite: (code) => request('/auth/verify-invite', {
+    method: 'POST',
+    body: JSON.stringify({ code })
   })
 }

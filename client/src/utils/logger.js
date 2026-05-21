@@ -40,9 +40,11 @@ export const logger = {
       online: nav.onLine,
       tokenExists: !!localStorage.getItem('token'),
       userInStorage: !!localStorage.getItem('user'),
+      userBadge: (() => { try { return JSON.parse(localStorage.getItem('user'))?.badge || null } catch { return null } })(),
       serviceWorker: 'serviceWorker' in navigator ? navigator.serviceWorker.controller?.state || 'uncontrolled' : 'unsupported',
       cameraSupported: !!navigator.mediaDevices?.getUserMedia,
-      standalone: window.matchMedia('(display-mode: standalone)').matches
+      standalone: window.matchMedia('(display-mode: standalone)').matches,
+      userAgentShort: nav.userAgent.slice(0, 80)
     }
   }
 }

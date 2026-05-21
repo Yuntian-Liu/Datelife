@@ -191,22 +191,24 @@
 3. **底部导航栏头像**：右上角彩色小圆点标记
 4. **PC 端 Header 头像**：右上角彩色小圆点标记
 
-### 如何给用户添加/修改徽章
+### 如何给用户添加/修改徽章（运维操作）
 
-**不需要改代码**，直接在 Zeabur 终端或数据库管理工具执行 SQL：
+**不需要改代码**，使用 `server/manage.js` 脚本操作数据库：
 
-```sql
--- 添加徽章
-UPDATE users SET badge = 'developer' WHERE uid = 100000;
-UPDATE users SET badge = 'early' WHERE uid = 100001;
-UPDATE users SET badge = 'co_creator' WHERE uid = 100002;
+```bash
+# 添加徽章（写操作需要加 --yes）
+node server/manage.js "UPDATE users SET badge = 'developer' WHERE uid = 100000" --yes
+node server/manage.js "UPDATE users SET badge = 'early' WHERE uid = 100001" --yes
+node server/manage.js "UPDATE users SET badge = 'co_creator' WHERE uid = 100002" --yes
 
--- 移除徽章
-UPDATE users SET badge = NULL WHERE uid = 100000;
+# 移除徽章
+node server/manage.js "UPDATE users SET badge = NULL WHERE uid = 100000" --yes
 
--- 查看当前所有有徽章的用户
-SELECT uid, nickname, badge FROM users WHERE badge IS NOT NULL;
+# 查看当前所有有徽章的用户（只读，直接执行）
+node server/manage.js "SELECT uid, nickname, badge FROM users WHERE badge IS NOT NULL"
 ```
+
+> **说明**：`server/manage.js` 封装了 better-sqlite3，复用应用自身的 `DATABASE_PATH` 环境变量保证不会连错库，写操作默认预览 + 必须加 `--yes` 才执行。详见下方「数据库管理工具」章节。
 
 ### 如何新增徽章类型
 
@@ -223,7 +225,119 @@ export const BADGES = {
 ```
 
 2. 在 BottomNav.vue 和 HomeView.vue 的小圆点颜色判断中添加对应分支
-3. 用 SQL 给目标用户赋值即可生效
+3. 用 `node server/manage.js "UPDATE users SET badge = ..." --yes` 给目标用户赋值即可生效
+
+---
+
+## 邀请码 (Invite Code) 系统
+
+### 设计目的
+
+通过环境变量开关 `INVITE_MODE` 控制注册门槛：
+- `true`：新用户注册必须输入有效邀请码 + 同意内测协议，否则无法发送验证邮件
+- `false`：公开注册，所有邀请码逻辑自动跳过
+
+### 拦截流程
+
+```
+新邮箱点击「发送验证码」
+  → POST /api/auth/check-email  ← 新增接口
+  → 邮件未注册 + INVITE_MODE=true
+  → 前端展开邀请码输入区（amber 色卡片）
+  → 用户输入邀请码 + 勾选内测协议
+  → POST /api/auth/verify-invite  ← 新增接口（仅校验，不消耗）
+  → 校验通过 → 自动重新调用 sendCode() 发送邮件
+  → 注册完成 → 邀请码标记已用（used_by, used_at, use_count+1）
+```
+
+### 数据库表
+
+```sql
+CREATE TABLE invite_codes (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  code        TEXT UNIQUE NOT NULL,          -- 邀请码
+  used_by     INTEGER,                       -- 使用者 UID
+  used_at     TEXT,                          -- 使用时间
+  expires_at  TEXT,                          -- 过期时间（NULL = 永不过期）
+  max_uses    INTEGER DEFAULT 1,             -- 最大使用次数
+  use_count   INTEGER DEFAULT 0,             -- 已使用次数
+  created_at  TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);
+```
+
+### 种子邀请码（首次部署自动写入）
+
+首次启动时表为空，自动插入 5 个一次性邀请码：
+- `datelife-alpha-2026`
+- `early-bird-2026`
+- `inner-test-001` / `inner-test-002` / `inner-test-003`
+
+后续重启/重新部署不会覆盖已有数据。
+
+### 如何新增邀请码（运维操作）
+
+```bash
+# 一次性邀请码
+node server/manage.js "INSERT INTO invite_codes (code) VALUES ('new-code')" --yes
+
+# 可多次使用的邀请码
+node server/manage.js "INSERT INTO invite_codes (code, max_uses) VALUES ('friend-batch-01', 10)" --yes
+
+# 带过期时间的邀请码
+node server/manage.js "INSERT INTO invite_codes (code, max_uses, expires_at) VALUES ('temp', 3, '2026-07-01 00:00:00')" --yes
+
+# 查看所有邀请码及使用情况
+node server/manage.js "SELECT code, use_count, max_uses, used_by, used_at, expires_at FROM invite_codes"
+```
+
+### 相关文件
+
+| 文件 | 说明 |
+|------|------|
+| `server/lib/db.js:65-124` | `invite_codes` 表创建 + 种子数据插入 |
+| `server/routes/auth.js:42-93` | `check-email` / `verify-invite` 接口 |
+| `server/routes/auth.js:96-175` | `login-code` / `register` 改造 |
+| `client/src/views/LoginView.vue:385-416` | 邀请码输入卡片 + 内测协议勾选 |
+| `client/src/utils/betaAgreement.js` | 内测协议 HTML 内容 |
+| `client/src/utils/api.js:72-79` | 前端 API 方法 (`checkEmail` / `verifyInvite`) |
+| `.env` / `.env.example` | `INVITE_MODE` 开关 |
+
+---
+
+## 数据库管理工具
+
+### `server/manage.js`
+
+Zeabur 容器可能没有 `sqlite3` CLI，提供 Node.js 脚本直接操作 SQLite。
+
+**特点**：
+- 复用 `DATABASE_PATH` 环境变量，与生产应用连同一库
+- WAL 模式自动启用
+- 写操作默认预览（需加 `--yes` 确认）
+- DDL（DROP/ALTER）需 `--yes --force` 二次确认
+- 结果表格格式化输出
+
+**用法**：
+```bash
+# 只读查询（直接执行）
+node server/manage.js "SELECT * FROM invite_codes"
+
+# 写操作预览（不加 --yes，仅预览）
+node server/manage.js "INSERT INTO invite_codes (code) VALUES ('x')"
+# → [预览] 即将执行... 加 --yes 确认执行
+
+# 写操作执行（加 --yes）
+node server/manage.js "INSERT INTO invite_codes (code) VALUES ('x')" --yes
+# → [执行完成] 1 row(s) affected
+
+# DDL 操作（加 --yes --force）
+node server/manage.js "DROP TABLE old_table" --yes --force
+```
+
+**安全说明**：
+- SELECT/PRAGMA 类只读操作无任何限制，直接执行
+- INSERT/UPDATE/DELETE 类写操作默认只预览影响行数，不加 `--yes` 不执行
+- DROP TABLE/ALTER TABLE 等 DDL 操作需要同时加 `--yes` 和 `--force`，防止误删表结构
 
 ---
 
@@ -502,3 +616,30 @@ cd client && npm run dev
   - 版本日志弹窗重构：新增 `changelog.js` 独立数据文件（21 个版本完整日志）
   - 下拉选择器按 minor 分组 + 折叠/展开 + 固定 300px 高度上限
   - 内容区动态渲染，选中版本即时切换
+
+- **v2.8.0-alpha 发布**：邀请码注册 + 徽章 UI 重构 + 数据库管理工具
+  - 邀请码注册系统（P4）：
+    - `INVITE_MODE` 环境变量开关，5 个种子邀请码（datelife-alpha-2026 等）
+    - 新增 `check-email` / `verify-invite` 两个 API 端点
+    - 发送邮件前拦截校验 → 省钱（Resend API 按发送计费）
+    - 登录页邀请码输入卡片（amber 配色）+ 内测协议勾选
+  - 内测协议（Beta Agreement）：
+    - 新建 `client/src/utils/betaAgreement.js`，5 节独立 HTML 文档
+    - 邀请码输入区内联展示 + 勾选确认
+  - 数据库管理工具：
+    - 新建 `server/manage.js`，Node.js + better-sqlite3 直接操作 SQLite
+    - 写操作需 `--yes` 确认，DDL 需 `--yes --force` 二次确认
+    - 复用 `DATABASE_PATH` 环境变量防止连错库
+  - 徽章系统 UI 重构：
+    - 圆点标记 → 渐变光环边框（3 处头像位置统一：首页 Header、底部导航、设置页）
+  - 登录页 Tab 切换器：验证码登录 / 密码登录平滑切换 + URL query 参数同步
+  - 开发文档大更新：
+    - 新增「邀请码系统」完整章节（表结构、拦截流程、运维命令）
+    - 新增「数据库管理工具」章节
+    - 徽章运维操作更新为 manage.js 方式
+  - 用户协议 & 隐私政策更新：邀请码注册说明 + 邀请码数据收集声明
+  - 诊断日志新增 `userBadge` 字段
+  - Bug 修复：
+    - 邀请码验证 SQL 中 `datetime("now")` 双引号错误（改为单引号 + JS 双引号）
+    - `LoginView.vue` 邀请码区域模板嵌套错误
+    - `betaAgreement.js` 模板字面量末尾重复反引号

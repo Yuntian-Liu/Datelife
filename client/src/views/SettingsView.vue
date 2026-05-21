@@ -163,7 +163,7 @@ const agreementType = ref('agreement')
 // 关于详情弹窗
 const showAbout = ref(false)
 const showChangelog = ref(false)
-const selectedChangelog = ref('v2.7.1-alpha')
+const selectedChangelog = ref('v2.8.0-alpha')
 const showVersionDropdown = ref(false)
 
 import { changelogData, getGroupedVersions } from '../utils/changelog.js'
@@ -271,7 +271,7 @@ onMounted(async () => {
               class="w-full bg-primary-500 hover:bg-primary-600 text-white py-3 rounded-xl font-medium transition shadow-md hover:shadow-lg active:scale-[0.98]">
               邮箱验证码登录
             </button>
-            <button @click="goToLogin"
+            <button @click="router.push('/login?mode=password')"
               class="w-full bg-white hover:bg-gray-50 text-gray-700 py-3 rounded-xl font-medium border border-gray-200 transition active:scale-[0.98]">
               密码登录
             </button>
@@ -329,7 +329,13 @@ onMounted(async () => {
       <div v-else class="space-y-4 pt-2">
         <!-- 用户信息行 -->
         <div class="bg-white rounded-2xl shadow-md border border-gray-100/80 p-4 flex items-center gap-3.5">
-          <img :src="avatarUrl" alt="头像"
+          <template v-if="badge">
+            <div class="rounded-full p-[2.5px] bg-gradient-to-r shadow-sm" :class="badge.ringColor">
+              <img :src="avatarUrl" alt="头像"
+                class="w-14 h-14 rounded-full bg-white shadow-inner" />
+            </div>
+          </template>
+          <img v-else :src="avatarUrl" alt="头像"
             class="w-14 h-14 rounded-full bg-primary-100 shadow-inner ring-2 ring-primary-100" />
           <div class="flex-1 min-w-0">
             <h2 class="font-semibold text-gray-800 text-base truncate flex items-center gap-1.5">

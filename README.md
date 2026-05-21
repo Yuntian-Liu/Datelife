@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-2.7.1--alpha-blue" alt="Version" />
+  <img src="https://img.shields.io/badge/Version-2.8.0--alpha-blue" alt="Version" />
   <img src="https://img.shields.io/badge/Vue-3.x-4FC08D?logo=vue.js&logoColor=white" alt="Vue" />
   <img src="https://img.shields.io/badge/Express-Node.js-000000?logo=express&logoColor=white" alt="Express" />
   <img src="https://img.shields.io/badge/SQLite-better--sqlite3-003B57?logo=sqlite&logoColor=white" alt="SQLite" />
@@ -33,12 +33,14 @@ Enter production dates and shelf life, and let Datelife automatically calculate 
 | Food Entry | Name + Production Date + Shelf Life → Auto-calculate expiry |
 | Status Detection | **Edible** (>14 days) / **Expiring Soon** (≤14 days) / **Expired** |
 | QR Code | Unique QR code per food item, scan to view details |
+| Barcode Scan | Barcode lookup via apibyte.cn API + QR code scanner |
+| Tag System | Custom tags with global persistent storage, 8-tag limit, tag filters |
 | Detail View | Full info + status + printable QR code |
 | Edit & Delete | Modify or remove records anytime |
-| User Auth | Email verification code + password login |
-| Badge System | Developer / Beta Tester / Co-creator badges |
+| User Auth | Email verification code + password login + invite code system |
+| Badge System | Developer / Beta Tester / Co-creator badges with gradient rings |
 | Data Export/Import | JSON backup with deduplication support |
-| PWA | Add to homescreen, offline caching |
+| PWA | Add to homescreen, offline caching via Service Worker |
 
 ### Responsive Design
 
@@ -117,41 +119,55 @@ Datelife/
 ├── client/                    # Vue 3 Frontend
 │   ├── src/
 │   │   ├── main.js           # Entry point + SW registration
-│   │   ├── App.vue           # Root component
+│   │   ├── App.vue           # Root component + global dialogs
 │   │   ├── router/index.js   # Router config
 │   │   ├── utils/
 │   │   │   ├── api.js        # API client (auth, foods, barcode)
-│   │   │   ├── badges.js     # Badge definitions
-│   │   │   └── agreement.js  # User agreement / privacy policy HTML
+│   │   │   ├── badges.js     # Badge definitions (developer/early/co_creator)
+│   │   │   ├── agreement.js  # User agreement & privacy policy HTML
+│   │   │   ├── betaAgreement.js # Beta agreement HTML
+│   │   │   ├── changelog.js  # Changelog data (22 versions)
+│   │   │   └── logger.js     # Diagnostic logger (API calls, route, export)
 │   │   ├── composables/      # Vue composables
-│   │   │   ├── useAuth.js    # Auth state management
+│   │   │   ├── useAuth.js    # Global auth state singleton
 │   │   │   └── useConfirm.js # Confirm dialog composable
 │   │   ├── components/       # Reusable components
-│   │   │   ├── BottomNav.vue  # Mobile floating nav
+│   │   │   ├── BottomNav.vue  # Mobile floating capsule nav
+│   │   │   ├── DesktopHeader.vue # Desktop top nav bar
 │   │   │   ├── ConfirmDialog.vue
+│   │   │   ├── Watermark.vue  # Dev watermark overlay
 │   │   │   └── TurnstileWidget.vue
 │   │   └── views/
-│   │       ├── HomeView.vue  # Home (table/card dual view)
-│   │       ├── FoodDetail.vue # Detail page (with QR code)
-│   │       └── SettingsView.vue # Settings with data management
+│   │       ├── HomeView.vue  # Home (dashboard dual-view)
+│   │       ├── FoodDetail.vue # Food detail (with QR code)
+│   │       ├── ScanView.vue  # Full-screen barcode/QR scanner
+│   │       ├── QRCodesView.vue # Printable QR code sheet
+│   │       ├── EditProfile.vue # Profile editor
+│   │       ├── AboutView.vue # About page (dev info, feedback)
+│   │       ├── LoginView.vue  # Login/register 3-step wizard
+│   │       └── SettingsView.vue # Settings (profile, data, changelog)
 │   ├── public/
 │   │   ├── manifest.json     # PWA manifest
-│   │   ├── sw.js            # Service Worker
-│   │   └── favicon.svg      # App icon (bento emoji)
+│   │   ├── sw.js            # Service Worker (cache-first strategy)
+│   │   └── favicon.png      # App icon
 │   └── vite.config.js        # Vite config (Tailwind + proxy)
 │
 ├── server/                    # Express Backend
-│   ├── index.js              # Entry point (serves static files in prod)
+│   ├── index.js              # Entry point (serves static in prod)
+│   ├── manage.js             # DB management CLI (--yes guard)
 │   ├── routes/
-│   │   ├── foods.js          # Food CRUD + QR code endpoints
-│   │   ├── barcode.js        # Barcode lookup endpoint
-│   │   └── auth.js           # Auth endpoints (login, register, profile)
+│   │   ├── foods.js          # Food CRUD + QR code + tags
+│   │   ├── barcode.js        # Barcode lookup proxy
+│   │   └── auth.js           # Auth (login, register, profile, invite)
 │   ├── lib/
-│   │   ├── db.js             # SQLite database layer
+│   │   ├── db.js             # SQLite (5 tables + auto-migration)
 │   │   ├── jwt.js            # JWT token utilities
-│   │   └── email.js         # Resend email sending
+│   │   ├── email.js         # Resend email (dev mode bypass)
+│   │   └── qrcode.js         # QR code generation
 │   └── middleware/
-│       └── auth.js           # Auth middleware (required / optional)
+│       ├── auth.js           # Auth middleware (required/optional)
+│       ├── turnstile.js      # Cloudflare Turnstile verification
+│       └── rateLimit.js      # IP-based sliding window limiter
 │
 ├── DEVELOPMENT.md             # Development docs
 └── .env.example              # Env variable template
@@ -160,10 +176,11 @@ Datelife/
 ## Roadmap
 
 - [x] MVP: Food CRUD + status calculation + QR codes + responsive layout
-- [x] P1: Auth system (email verification + password login) + Badge system
+- [x] P1: Auth system (email + password + invite code) + Badge system + user agreement
 - [x] P2: Settings page redesign + Data management (export/import) + PWA support
-- [x] P3: Barcode recognition, category filters (via tags)
-- [ ] P3: Expiration alerts, batch entry, image upload
+- [x] P3: Barcode recognition, tag system, changelog viewer, scan page
+- [x] P4: Invite code registration, beta agreement, DB management CLI
+- [ ] Future: Expiration alerts, batch entry, image upload
 
 ## Try It Out
 

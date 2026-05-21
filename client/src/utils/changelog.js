@@ -1,4 +1,5 @@
 export const changelogVersions = [
+  { version: 'v2.8.0-alpha', date: '2026-05-21', group: '2.8' },
   { version: 'v2.7.1-alpha', date: '2026-05-21', group: '2.7.x' },
   { version: 'v2.7.0-alpha', date: '2026-05-21', group: '2.7.x' },
   { version: 'v2.6.0-alpha', date: '2026-05-20', group: '2.6' },
@@ -23,6 +24,39 @@ export const changelogVersions = [
 ]
 
 export const changelogData = {
+  'v2.8.0-alpha': {
+    date: '2026-05-21',
+    sections: [
+      {
+        type: '新增',
+        color: 'green',
+        items: [
+          '邀请码注册系统：INVITE_MODE 环境变量开关 + 5 个种子邀请码，check-email / verify-invite 新接口',
+          '内测协议（betaAgreement.js）：独立 HTML 文档，邀请码输入区内联展示 + 勾选确认',
+          '数据库管理脚本 server/manage.js：复用 DATABASE_PATH 变量，写操作需 --yes 确认，防误操作',
+          '登录页验证码/密码 Tab 切换器，URL query 参数同步模式状态'
+        ]
+      },
+      {
+        type: '优化',
+        color: 'blue',
+        items: [
+          '徽章系统 UI 重构：圆点标记改为渐变光环边框，3 处头像位置效果统一',
+          '用户协议与隐私政策：新增邀请码注册说明 + 邀请码数据收集声明',
+          '开发文档重写：新增邀请码系统章节 + 数据库管理工具章节 + 徽章运维操作更新',
+          '诊断日志新增 userBadge 字段，辅助排查徽章显示问题'
+        ]
+      },
+      {
+        type: '修复',
+        color: 'red',
+        items: [
+          '邀请码验证 SQL 中 datetime("now") 双引号被 SQLite 当列名的错误',
+          'LoginView.vue 邀请码区域模板嵌套错误'
+        ]
+      }
+    ]
+  },
   'v2.7.1-alpha': {
     date: '2026-05-21',
     sections: [

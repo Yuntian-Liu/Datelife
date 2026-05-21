@@ -1,23 +1,34 @@
 <script setup>
-import { ref, computed, nextTick } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, nextTick, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { auth } from '../utils/api'
 import { useAuth } from '../composables/useAuth'
 import { logger } from '../utils/logger'
 import TurnstileWidget from '../components/TurnstileWidget.vue'
 import { USER_AGREEMENT_HTML, PRIVACY_POLICY_HTML } from '../utils/agreement'
+import { BETA_AGREEMENT_HTML } from '../utils/betaAgreement'
 
 const router = useRouter()
+const route = useRoute()
 const { setAuth } = useAuth()
 
 const isDev = import.meta.env.DEV
-const mode = ref('code')
+const mode = ref(route.query.mode === 'password' ? 'password' : 'code')
+
+onMounted(() => {
+  if (route.query.mode === 'password') mode.value = 'password'
+})
 const step = ref(1)
 const email = ref('')
 const code = ref(['', '', '', '', '', ''])
 const nickname = ref('')
 const password = ref('')
 const bio = ref('')
+const needInvite = ref(false)
+const inviteCode = ref('')
+const inviteVerified = ref(false)
+const agreedBeta = ref(false)
+const inviteError = ref('')
 const turnstileToken = ref(isDev ? 'dev-bypass' : '')
 const loading = ref(false)
 const errMsg = ref('')
@@ -101,8 +112,9 @@ function startCountdown() {
   }, 1000)
 }
 
-async function sendCode() {
+async function sendCode(skipInviteCheck) {
   errMsg.value = ''
+  inviteError.value = ''
   if (!email.value || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
     errMsg.value = '请输入有效的邮箱地址'
     return
@@ -112,8 +124,26 @@ async function sendCode() {
     return
   }
 
+  // 邀请码模式：检查邮箱是否需要邀请码（仅未注册且 INVITE_MODE=true 时需要）
+  if (!skipInviteCheck && !inviteVerified.value) {
+    loading.value = true
+    try {
+      const check = await auth.checkEmail(email.value)
+      if (check.needInvite) {
+        needInvite.value = true
+        loading.value = false
+        return
+      }
+    } catch (e) {
+      logger.error('auth', '邮箱检查失败', { email: email.value, error: e.message })
+      // 检查失败时放行，继续发验证码（可能是网络问题）
+    }
+  }
+
   loading.value = true
   try {
+    const body = { email: email.value, turnstileToken: turnstileToken.value }
+    if (inviteVerified.value && inviteCode.value) body.invite_code = inviteCode.value
     await auth.sendCode(email.value, turnstileToken.value)
     logger.info('auth', '验证码已发送', { email: email.value })
     step.value = 2
@@ -121,6 +151,33 @@ async function sendCode() {
   } catch (e) {
     logger.error('auth', '验证码发送失败', { email: email.value, error: e.message })
     errMsg.value = e.message
+  } finally {
+    loading.value = false
+  }
+}
+
+async function verifyInvite() {
+  inviteError.value = ''
+  if (!inviteCode.value) {
+    inviteError.value = '请输入邀请码'
+    return
+  }
+  if (!agreedBeta.value) {
+    inviteError.value = '请先同意内测协议'
+    return
+  }
+
+  loading.value = true
+  try {
+    await auth.verifyInvite(inviteCode.value)
+    inviteVerified.value = true
+    needInvite.value = false
+    logger.info('auth', '邀请码验证通过', { code: inviteCode.value })
+    // 自动触发真正的发送验证码
+    await sendCode(true)
+  } catch (e) {
+    logger.error('auth', '邀请码验证失败', { code: inviteCode.value, error: e.message })
+    inviteError.value = e.message
   } finally {
     loading.value = false
   }
@@ -191,7 +248,8 @@ async function register() {
     const fullCode = code.value.join('')
     const result = await auth.register(
       email.value, fullCode, nickname.value, password.value,
-      avatarSeed.value, bio.value || ''
+      avatarSeed.value, bio.value || '',
+      inviteVerified.value ? inviteCode.value : undefined
     )
     logger.info('auth', '注册成功', { uid: result.user.uid, email: email.value })
     registerResult.value = result
@@ -230,6 +288,10 @@ function switchMode(m) {
   mode.value = m
   step.value = 1
   errMsg.value = ''
+  const query = { ...route.query }
+  if (m === 'password') query.mode = 'password'
+  else delete query.mode
+  router.replace({ query })
 }
 
 function openAgreement(type) {
@@ -237,9 +299,11 @@ function openAgreement(type) {
   showAgreement.value = true
 }
 
-const agreementContent = computed(() =>
-  agreementType.value === 'privacy' ? PRIVACY_POLICY_HTML : USER_AGREEMENT_HTML
-)
+const agreementContent = computed(() => {
+  if (agreementType.value === 'privacy') return PRIVACY_POLICY_HTML
+  if (agreementType.value === 'beta') return BETA_AGREEMENT_HTML
+  return USER_AGREEMENT_HTML
+})
 </script>
 
 <template>
@@ -271,6 +335,20 @@ const agreementContent = computed(() =>
       <div class="px-8 pb-8">
         <!-- Step 1: 输入邮箱 -->
         <div v-if="step === 1">
+          <!-- 模式切换 Tab -->
+          <div class="flex bg-gray-100 rounded-xl p-1 mb-5">
+            <button @click="switchMode('code')"
+              class="flex-1 py-2 text-sm font-medium rounded-lg transition"
+              :class="mode === 'code' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'">
+              验证码登录
+            </button>
+            <button @click="switchMode('password')"
+              class="flex-1 py-2 text-sm font-medium rounded-lg transition"
+              :class="mode === 'password' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'">
+              密码登录
+            </button>
+          </div>
+
           <template v-if="mode === 'code'">
             <div class="space-y-4">
               <div>
@@ -298,15 +376,42 @@ const agreementContent = computed(() =>
                 </span>
               </label>
 
-              <button @click="sendCode" :disabled="loading || !turnstileToken || !agreed"
+              <button @click="sendCode()" :disabled="loading || !turnstileToken || !agreed"
                 class="w-full bg-primary-500 hover:bg-primary-600 disabled:bg-gray-300 disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-medium transition">
                 {{ loading ? '发送中...' : '发送验证码' }}
               </button>
             </div>
 
-            <div class="text-center mt-4">
-              <button @click="switchMode('password')" class="text-sm text-gray-400 hover:text-primary-500 transition">
-                用密码登录 →
+            <div v-if="needInvite" class="mt-4 p-4 bg-amber-50/30 rounded-2xl border border-amber-200/50 space-y-3">
+              <div class="flex items-center gap-1.5 mb-2">
+                <svg class="w-4 h-4 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                </svg>
+                <span class="text-xs font-semibold text-amber-700">内测专属</span>
+              </div>
+
+              <p class="text-xs text-amber-600/80 leading-relaxed">Datelife 目前处于开发阶段，尚未开启公测。使用邀请码即表示您同意我们的《内测协议》。</p>
+
+              <div>
+                <input v-model="inviteCode" type="text" placeholder="请输入邀请码"
+                  class="w-full border border-amber-300/50 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:border-transparent bg-white/80"
+                  :disabled="inviteVerified" />
+              </div>
+
+              <div v-if="inviteError" class="text-xs text-red-500 mt-1">{{ inviteError }}</div>
+
+              <label class="flex items-start gap-2 mt-2.5 cursor-pointer group select-none">
+                <input type="checkbox" v-model="agreedBeta"
+                  class="mt-0.5 w-4 h-4 rounded border-amber-300/50 text-amber-500 focus:ring-amber-400/40 cursor-pointer transition" />
+                <span class="text-xs text-amber-700/80 leading-relaxed group-hover:text-amber-800 transition">
+                  我已阅读并同意
+                  <a @click.prevent="openAgreement('beta')" class="text-amber-600 hover:text-amber-700 underline underline-offset-2 font-medium">《内测协议》</a>
+                </span>
+              </label>
+
+              <button @click="verifyInvite" :disabled="loading || !inviteCode || !agreedBeta"
+                class="w-full bg-amber-500 hover:bg-amber-600 disabled:bg-amber-200 disabled:opacity-50 text-white py-2 rounded-lg text-sm font-medium transition shadow-sm mt-1">
+                {{ loading ? '验证中...' : (inviteVerified ? '✓ 已验证 — 继续发送' : '验证邀请码并继续 →') }}
               </button>
             </div>
           </template>
@@ -328,12 +433,6 @@ const agreementContent = computed(() =>
               <button @click="passwordLogin" :disabled="loading"
                 class="w-full bg-primary-500 hover:bg-primary-600 disabled:bg-gray-300 text-white py-2.5 rounded-xl text-sm font-medium transition">
                 {{ loading ? '登录中...' : '登录' }}
-              </button>
-            </div>
-
-            <div class="text-center mt-4">
-              <button @click="switchMode('code')" class="text-sm text-gray-400 hover:text-primary-500 transition">
-                ← 返回验证码登录
               </button>
             </div>
           </template>
