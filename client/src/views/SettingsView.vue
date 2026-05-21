@@ -163,7 +163,7 @@ const agreementType = ref('agreement')
 // 关于详情弹窗
 const showAbout = ref(false)
 const showChangelog = ref(false)
-const selectedChangelog = ref('v2.8.0-alpha')
+const selectedChangelog = ref('v2.8.1-alpha')
 const showVersionDropdown = ref(false)
 
 import { changelogData, getGroupedVersions } from '../utils/changelog.js'

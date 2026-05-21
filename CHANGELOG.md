@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2.8.1-alpha] - 2026-05-21
+
+### Fixed
+
+- HarmonyOS/Honor browser Vue render crash: build target downgraded to es2015
+- Mobile tag management delete button invisible: hover-dependent opacity changed to md breakpoint always-visible
+- Mobile add-food tag limit info icon unclickable: touch target 16px → 44px
+
+---
+
 ## [2.8.0-alpha] - 2026-05-21
 
 ### Added

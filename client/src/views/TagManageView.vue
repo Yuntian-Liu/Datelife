@@ -132,7 +132,7 @@ async function deleteTag(t) {
                 <span class="text-xs text-gray-300 shrink-0">用于 {{ tagCounts[t] || 0 }} 个食品</span>
               </div>
               <button @click="deleteTag(t)"
-                class="shrink-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 text-xs px-2 py-1 rounded-lg hover:bg-red-50 transition">
+                class="shrink-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 text-gray-300 hover:text-red-500 text-xs px-2 py-1 rounded-lg hover:bg-red-50 transition">
                 删除
               </button>
             </div>

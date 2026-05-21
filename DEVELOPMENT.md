@@ -643,3 +643,9 @@ cd client && npm run dev
     - 邀请码验证 SQL 中 `datetime("now")` 双引号错误（改为单引号 + JS 双引号）
     - `LoginView.vue` 邀请码区域模板嵌套错误
     - `betaAgreement.js` 模板字面量末尾重复反引号
+
+- **v2.8.1-alpha 发布**：鸿蒙/荣耀浏览器兼容 + 移动端交互修复
+  - 鸿蒙/荣耀系统浏览器 Vue 渲染崩溃：build target 降级至 es2015（`client/vite.config.js`）
+  - 移动端标签管理页删除按钮不可见：hover 依赖的 `opacity-0 group-hover:opacity-100` 改为 `opacity-100 md:opacity-0 md:group-hover:opacity-100`
+  - 移动端添加食品页标签上限信息图标无法点击：触控区域 16px → 44px（`p-2`），`right-2.5` → `right-1` 补偿间距
+  - 邀请码种子数据更新：除已使用的 `datelife-alpha-2026` 外，其余 10 个改为随机 6 位字母数字组合（`INSERT OR IGNORE` 幂等）

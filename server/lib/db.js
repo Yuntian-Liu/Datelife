@@ -115,13 +115,16 @@ function initTables() {
     }
   }
 
-  // 种子邀请码（仅表为空时插入）
-  const inviteCount = db.prepare('SELECT COUNT(*) AS c FROM invite_codes').get()
-  if (inviteCount.c === 0) {
-    const insertInvite = db.prepare('INSERT INTO invite_codes (code, max_uses) VALUES (?, 1)')
-    const seeds = ['datelife-alpha-2026', 'early-bird-2026', 'inner-test-001', 'inner-test-002', 'inner-test-003']
-    seeds.forEach(code => insertInvite.run(code))
-  }
+  // 种子邀请码（INSERT OR IGNORE，新增码自动写入，已有码不重复）
+  const insertInvite = db.prepare('INSERT OR IGNORE INTO invite_codes (code, max_uses) VALUES (?, 1)')
+  const seeds = [
+    'datelife-alpha-2026',
+    'datelife-bty0fa', 'datelife-b0ehom', 'datelife-hcdy7h',
+    'datelife-063siw', 'datelife-ksjkoc', 'datelife-29mfbl',
+    'datelife-is4r6k', 'datelife-32hgyp', 'datelife-lalizb',
+    'datelife-lw4azq'
+  ]
+  seeds.forEach(code => insertInvite.run(code))
 }
 
 function getNextUid() {

@@ -1,5 +1,6 @@
 export const changelogVersions = [
-  { version: 'v2.8.0-alpha', date: '2026-05-21', group: '2.8' },
+  { version: 'v2.8.1-alpha', date: '2026-05-21', group: '2.8.x' },
+  { version: 'v2.8.0-alpha', date: '2026-05-21', group: '2.8.x' },
   { version: 'v2.7.1-alpha', date: '2026-05-21', group: '2.7.x' },
   { version: 'v2.7.0-alpha', date: '2026-05-21', group: '2.7.x' },
   { version: 'v2.6.0-alpha', date: '2026-05-20', group: '2.6' },
@@ -24,6 +25,20 @@ export const changelogVersions = [
 ]
 
 export const changelogData = {
+  'v2.8.1-alpha': {
+    date: '2026-05-21',
+    sections: [
+      {
+        type: '修复',
+        color: 'red',
+        items: [
+          '鸿蒙/荣耀系统浏览器 Vue 渲染崩溃：build target 降级至 es2015',
+          '移动端标签管理页删除按钮不可见：hover 依赖改为 md 断点常显',
+          '移动端添加食品页标签上限信息图标无法点击：触控区域 16px → 44px'
+        ]
+      }
+    ]
+  },
   'v2.8.0-alpha': {
     date: '2026-05-21',
     sections: [
