@@ -11,6 +11,9 @@ export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version)
   },
+  build: {
+    target: 'es2015'
+  },
   server: {
     proxy: {
       '/api': 'http://localhost:3000'
