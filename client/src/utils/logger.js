@@ -44,7 +44,10 @@ export const logger = {
       serviceWorker: 'serviceWorker' in navigator ? navigator.serviceWorker.controller?.state || 'uncontrolled' : 'unsupported',
       cameraSupported: !!navigator.mediaDevices?.getUserMedia,
       standalone: window.matchMedia('(display-mode: standalone)').matches,
-      userAgentShort: nav.userAgent.slice(0, 80)
+      userAgentShort: nav.userAgent.slice(0, 80),
+      devicePixelRatio: window.devicePixelRatio || 1,
+      maxTouchPoints: nav.maxTouchPoints ?? 0,
+      reducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches
     }
   }
 }

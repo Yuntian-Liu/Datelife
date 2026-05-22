@@ -24,7 +24,7 @@ function tagColor(name) {
   let idx = 0
   for (let i = 0; i < name.length; i++) idx += name.charCodeAt(i)
   let color = TAG_COLORS[idx % TAG_COLORS.length]
-  while (used.includes(color)) { idx++; color = TAG_COLORS[idx % TAG_COLORS.length] }
+  while (used.includes(color) && used.length < TAG_COLORS.length) { idx++; color = TAG_COLORS[idx % TAG_COLORS.length] }
   tagColorCache.set(name, color)
   return color
 }
@@ -37,7 +37,7 @@ async function loadTags() {
     for (const f of list) {
       try {
         JSON.parse(f.tags || '[]').forEach(t => { countMap[t] = (countMap[t] || 0) + 1 })
-      } catch {}
+      } catch { logger.error('tags', '标签数据解析失败', { foodId: f.id, tags: f.tags }) }
     }
     for (const t of tagNames) {
       if (!(t in countMap)) countMap[t] = 0

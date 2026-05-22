@@ -43,8 +43,10 @@ router.get('/:code', async (req, res) => {
     }
   } catch (err) {
     if (err.name === 'TimeoutError') {
+      console.error('[Barcode] 查询超时:', err.message)
       return res.status(504).json({ error: '条形码查询超时' })
     }
+    console.error('[Barcode] 查询失败:', err.message)
     res.status(500).json({ error: '条形码查询失败' })
   }
 })

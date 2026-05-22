@@ -27,12 +27,23 @@ function attachStatus(food) {
   return { ...food, status, days_left: daysLeft }
 }
 
+const MAX_TAGS = 8
+
 function syncTags(db, userId, tagsJson) {
   try {
     const arr = JSON.parse(tagsJson)
-    if (!Array.isArray(arr)) return
+    if (!Array.isArray(arr) || arr.length === 0) return
+    const existing = db.prepare('SELECT COUNT(*) AS c FROM tags WHERE user_id = ?').get(userId).c
+    const remaining = MAX_TAGS - existing
+    if (remaining <= 0) return
     const stmt = db.prepare('INSERT OR IGNORE INTO tags (user_id, name) VALUES (?, ?)')
-    for (const t of arr) { if (t) stmt.run(userId, t) }
+    let added = 0
+    for (const t of arr) {
+      if (!t) continue
+      if (added >= remaining) break
+      const result = stmt.run(userId, t)
+      if (result.changes > 0) added++
+    }
   } catch {}
 }
 
@@ -65,6 +76,8 @@ router.post('/tags', authRequired, (req, res) => {
   if (!name || !name.trim()) return res.status(400).json({ error: '标签名不能为空' })
   const db = getDb()
   const trimmed = name.trim()
+  const count = db.prepare('SELECT COUNT(*) AS c FROM tags WHERE user_id = ?').get(req.user.uid).c
+  if (count >= MAX_TAGS) return res.status(400).json({ error: `标签最多 ${MAX_TAGS} 个` })
   try {
     db.prepare('INSERT INTO tags (user_id, name) VALUES (?, ?)').run(req.user.uid, trimmed)
     res.json({ name: trimmed })
@@ -87,7 +100,7 @@ router.get('/:id', (req, res) => {
 
 // 新增食品（需要登录）
 router.post('/', authRequired, (req, res) => {
-  const { name, barcode, produce_date, shelf_life_days, shelf_life_unit, category, tags } = req.body
+  const { name, barcode, produce_date, shelf_life_days, shelf_life_unit, category, tags, quantity } = req.body
   if (!name || !produce_date || !shelf_life_days) {
     return res.status(400).json({ error: '名称、生产日期、保质期天数必填' })
   }
@@ -95,9 +108,9 @@ router.post('/', authRequired, (req, res) => {
   const expire_date = calcExpireDate(produce_date, shelf_life_days)
   const db = getDb()
   const result = db.prepare(`
-    INSERT INTO foods (user_id, name, barcode, produce_date, shelf_life_days, shelf_life_unit, expire_date, category, tags)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(req.user.uid, name, barcode || null, produce_date, shelf_life_days, shelf_life_unit || '天', expire_date, category || null, tags || '[]')
+    INSERT INTO foods (user_id, name, barcode, produce_date, shelf_life_days, shelf_life_unit, expire_date, category, tags, quantity)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(req.user.uid, name, barcode || null, produce_date, shelf_life_days, shelf_life_unit || '天', expire_date, category || null, tags || '[]', quantity || 1)
 
   syncTags(db, req.user.uid, tags || '[]')
 
@@ -119,17 +132,36 @@ router.put('/:id', authRequired, (req, res) => {
   const shelf_life_unit = req.body.shelf_life_unit ?? existing.shelf_life_unit ?? '天'
   const category = req.body.category ?? existing.category
   const tags = req.body.tags ?? existing.tags
+  const quantity = req.body.quantity ?? existing.quantity ?? 1
   const expire_date = calcExpireDate(produce_date, shelf_life_days)
 
   db.prepare(`
-    UPDATE foods SET name=?, barcode=?, produce_date=?, shelf_life_days=?, shelf_life_unit=?, expire_date=?, category=?, tags=?, updated_at=datetime('now','localtime')
+    UPDATE foods SET name=?, barcode=?, produce_date=?, shelf_life_days=?, shelf_life_unit=?, expire_date=?, category=?, tags=?, quantity=?, updated_at=datetime('now','localtime')
     WHERE id=?
-  `).run(name, barcode, produce_date, shelf_life_days, shelf_life_unit, expire_date, category, tags, req.params.id)
+  `).run(name, barcode, produce_date, shelf_life_days, shelf_life_unit, expire_date, category, tags, quantity, req.params.id)
 
   syncTags(db, req.user.uid, tags)
 
   const food = db.prepare('SELECT * FROM foods WHERE id = ?').get(req.params.id)
   res.json(attachStatus(food))
+})
+
+// 吃掉一件（需要登录 + 是自己的）
+router.post('/:id/consume', authRequired, (req, res) => {
+  const db = getDb()
+  const existing = db.prepare('SELECT * FROM foods WHERE id = ?').get(req.params.id)
+  if (!existing) return res.status(404).json({ error: '食品不存在' })
+  if (existing.user_id !== req.user.uid) return res.status(403).json({ error: '无权操作此食品' })
+
+  const qty = existing.quantity ?? 1
+  if (qty <= 1) {
+    db.prepare('DELETE FROM foods WHERE id = ?').run(req.params.id)
+    return res.json({ deleted: true })
+  }
+
+  db.prepare("UPDATE foods SET quantity = quantity - 1, updated_at = datetime('now','localtime') WHERE id = ?")
+    .run(req.params.id)
+  res.json({ quantity: qty - 1 })
 })
 
 // 删除食品（需要登录 + 是自己的）

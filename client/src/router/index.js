@@ -1,24 +1,17 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
-import FoodDetail from '../views/FoodDetail.vue'
-import SettingsView from '../views/SettingsView.vue'
-import EditProfile from '../views/EditProfile.vue'
-import LoginView from '../views/LoginView.vue'
-import FoodsView from '../views/FoodsView.vue'
-import QRCodesView from '../views/QRCodesView.vue'
-import ScanView from '../views/ScanView.vue'
-import TagManageView from '../views/TagManageView.vue'
 
 const routes = [
-  { path: '/', component: HomeView },
-  { path: '/foods', component: FoodsView },
-  { path: '/qrcodes', component: QRCodesView },
-  { path: '/scan', component: ScanView },
-  { path: '/f/:id', component: FoodDetail },
-  { path: '/settings', component: SettingsView },
-  { path: '/settings/edit', component: EditProfile },
-  { path: '/tags', component: TagManageView },
-  { path: '/login', component: LoginView }
+  { path: '/', component: () => import('../views/HomeView.vue') },
+  { path: '/foods', component: () => import('../views/FoodsView.vue') },
+  { path: '/foods/add', component: () => import('../views/FoodForm.vue') },
+  { path: '/foods/edit/:id', component: () => import('../views/FoodForm.vue') },
+  { path: '/qrcodes', component: () => import('../views/QRCodesView.vue') },
+  { path: '/scan', component: () => import('../views/ScanView.vue') },
+  { path: '/f/:id', component: () => import('../views/FoodDetail.vue') },
+  { path: '/settings', component: () => import('../views/SettingsView.vue') },
+  { path: '/settings/edit', component: () => import('../views/EditProfile.vue') },
+  { path: '/tags', component: () => import('../views/TagManageView.vue') },
+  { path: '/login', component: () => import('../views/LoginView.vue') }
 ]
 
 const router = createRouter({

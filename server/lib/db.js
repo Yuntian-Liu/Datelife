@@ -102,6 +102,13 @@ function initTables() {
     // 列已存在，忽略错误
   }
 
+  // 给 foods 表添加 quantity 列（如果不存在）
+  try {
+    db.prepare("ALTER TABLE foods ADD COLUMN quantity INTEGER DEFAULT 1").run()
+  } catch (e) {
+    // 列已存在，忽略错误
+  }
+
   // 首次启动：从 foods 迁移已有标签到 tags 表
   const tagCount = db.prepare('SELECT COUNT(*) AS c FROM tags').get()
   if (tagCount.c === 0) {

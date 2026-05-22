@@ -122,6 +122,18 @@ function buildWatermarkCanvas() {
   return canvas
 }
 
+function buildPageNumberCanvas(pageNum, totalPages) {
+  const canvas = document.createElement('canvas')
+  canvas.width = 200
+  canvas.height = 24
+  const ctx = canvas.getContext('2d')
+  ctx.font = '12px -apple-system, BlinkMacSystemFont, "Noto Sans SC", sans-serif'
+  ctx.fillStyle = '#9ca3af'
+  ctx.textAlign = 'center'
+  ctx.fillText(`第 ${pageNum} 页 / 共 ${totalPages} 页`, 100, 16)
+  return canvas
+}
+
 async function downloadPDF() {
   downloadingPDF.value = true
   const startTime = Date.now()
@@ -138,10 +150,15 @@ async function downloadPDF() {
     for (let i = 0; i < totalItems; i += batchSize) {
       const batch = foodList.value.slice(i, i + batchSize)
       const results = await Promise.all(batch.map(async (food) => {
-        const qrImg = await loadImage(qrUrl(food.id))
-        return buildCardCanvas(food, qrImg).toDataURL('image/png')
+        try {
+          const qrImg = await loadImage(qrUrl(food.id))
+          return buildCardCanvas(food, qrImg).toDataURL('image/png')
+        } catch (e) {
+          logger.error('qrcode', 'PDF 卡片合成失败', { foodId: food.id, name: food.name, error: e.message })
+          return null
+        }
       }))
-      cardDataUrls.push(...results)
+      cardDataUrls.push(...results.filter(Boolean))
       logger.info('qrcode', 'PDF 卡片合成进度', { loaded: Math.min(i + batchSize, totalItems), total: totalItems })
     }
 
@@ -156,7 +173,7 @@ async function downloadPDF() {
     const cellHeight = 40
     const rowsPerPage = Math.floor((pageHeight - marginTop - marginBottom) / cellHeight)
     const perPage = cols * rowsPerPage
-    const totalPages = Math.ceil(foodList.value.length / perPage)
+    const totalPages = Math.ceil(cardDataUrls.length / perPage)
     const today = new Date().toISOString().slice(0, 10)
 
     // 水印 tile 实际尺寸
@@ -165,13 +182,6 @@ async function downloadPDF() {
 
     for (let page = 0; page < totalPages; page++) {
       if (page > 0) pdf.addPage()
-
-      // 水印平铺
-      for (let wy = 0; wy < pageHeight; wy += wmTileH) {
-        for (let wx = -15; wx < pageWidth + 15; wx += wmTileW) {
-          pdf.addImage(watermarkDataUrl, 'PNG', wx, wy, wmTileW, wmTileH)
-        }
-      }
 
       // 标题
       pdf.addImage(titleDataUrl, 'PNG', (pageWidth - 100) / 2, 8, 100, 10)
@@ -198,11 +208,17 @@ async function downloadPDF() {
         }
       }
 
+      // 水印平铺（最上层）
+      for (let wy = 0; wy < pageHeight; wy += wmTileH) {
+        for (let wx = -15; wx < pageWidth + 15; wx += wmTileW) {
+          pdf.addImage(watermarkDataUrl, 'PNG', wx, wy, wmTileW, wmTileH)
+        }
+      }
+
       // 页码
       if (totalPages > 1) {
-        pdf.setFontSize(7)
-        pdf.setTextColor(156, 163, 175)
-        pdf.text(`第 ${page + 1} 页 / 共 ${totalPages} 页`, pageWidth / 2, pageHeight - 6, { align: 'center' })
+        const pnDataUrl = buildPageNumberCanvas(page + 1, totalPages).toDataURL('image/png')
+        pdf.addImage(pnDataUrl, 'PNG', (pageWidth - 40) / 2, pageHeight - 11, 40, 5)
       }
     }
 

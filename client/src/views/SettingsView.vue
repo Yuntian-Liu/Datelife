@@ -17,7 +17,13 @@ const showConfirm = useConfirm()
 const foodCount = ref(0)
 
 // 数据管理
+const MAX_TAGS = 8
 const importing = ref(false)
+const pendingImportFoods = ref([])
+const showTagConflict = ref(false)
+const conflictExistingTags = ref([])
+const conflictImportTags = ref([])
+const conflictSelected = ref({})
 const fileInput = ref(null)
 
 async function exportData() {
@@ -63,7 +69,6 @@ function triggerImport() {
 async function handleImport(event) {
   const file = event.target.files[0]
   if (!file) return
-  // 重置 input 以便下次选同一文件也能触发
   event.target.value = ''
 
   importing.value = true
@@ -97,62 +102,155 @@ async function handleImport(event) {
 
     logger.info('import', `准备导入 ${data.foods.length} 条食品`)
 
-    const confirmed = await showConfirm({
-      title: '导入数据',
-      message: `将导入 ${data.foods.length} 条食品数据，是否继续？`,
-      confirmText: '导入',
-      cancelText: '取消'
-    })
-    if (!confirmed) { logger.info('import', '用户取消导入'); return }
-
-    // 去重：获取现有数据
-    const existing = await foods.getAll()
-    logger.info('import', `当前已有 ${existing.length} 条食品，进行去重检查`)
-    const existingKeys = new Set(existing.map(f => f.name + '|' + f.produce_date))
-
-    let success = 0, fail = 0, skipped = 0
+    // 标签冲突检测
+    const existingTags = await foods.getTags()
+    const importTagSet = new Set()
     for (const item of data.foods) {
-      if (!item.name || !item.produce_date || !item.shelf_life_days) {
-        logger.warn('import', '跳过无效条目', item)
-        fail++; continue
-      }
-      const key = item.name + '|' + item.produce_date
-      if (existingKeys.has(key)) { skipped++; continue }
       try {
-        await foods.create({
-          name: item.name,
-          barcode: item.barcode || null,
-          produce_date: item.produce_date,
-          shelf_life_days: item.shelf_life_days,
-          category: item.category || null,
-          tags: item.tags || '[]'
-        })
-        success++
-        existingKeys.add(key)
-      } catch (e) {
-        logger.error('import', `创建食品失败: ${item.name}`, e.message)
-        fail++
-        // 401 表示登录过期，立即中止
-        if (e.message === '请先登录' || e.message.includes('登录已过期')) {
-          alert('登录已过期，请重新登录后再导入')
-          break
-        }
+        JSON.parse(item.tags || '[]').forEach(t => { if (t) importTagSet.add(t) })
+      } catch {}
+    }
+    const allTagSet = new Set([...existingTags, ...importTagSet])
+
+    if (allTagSet.size > MAX_TAGS && importTagSet.size > 0) {
+      pendingImportFoods.value = data.foods
+      conflictExistingTags.value = existingTags
+      conflictImportTags.value = [...importTagSet]
+      // 默认：已有标签全选 + 导入标签按顺序填充剩余空位
+      const defaultSelected = {}
+      for (const t of existingTags) defaultSelected[t] = true
+      let slots = Math.max(0, MAX_TAGS - existingTags.length)
+      for (const t of importTagSet) {
+        if (defaultSelected[t]) continue
+        if (slots > 0) { defaultSelected[t] = true; slots-- }
+        else defaultSelected[t] = false
       }
+      conflictSelected.value = defaultSelected
+      showTagConflict.value = true
+      logger.info('import', '标签超限，弹出冲突弹窗', { existing: existingTags.length, importNew: importTagSet.size, total: allTagSet.size })
+      return
     }
 
-    const list = await foods.getAll()
-    foodCount.value = list.length
-
-    logger.info('import', `导入完成: 成功${success}, 跳过${skipped}, 失败${fail}`)
-    const parts = [`成功 ${success} 条`]
-    if (skipped > 0) parts.push(`跳过 ${skipped} 条重复`)
-    if (fail > 0) parts.push(`失败 ${fail} 条`)
-    alert(`导入完成：${parts.join('，')}`)
+    await executeImport(data.foods)
   } catch (e) {
     logger.error('import', '导入异常', e.message)
     alert('导入失败：' + e.message)
   } finally {
     importing.value = false
+  }
+}
+
+async function executeImport(foodsToImport) {
+  const confirmed = await showConfirm({
+    title: '导入数据',
+    message: `将导入 ${foodsToImport.length} 条食品数据，是否继续？`,
+    confirmText: '导入',
+    cancelText: '取消'
+  })
+  if (!confirmed) { logger.info('import', '用户取消导入'); return }
+
+  const existing = await foods.getAll()
+  logger.info('import', `当前已有 ${existing.length} 条食品，进行去重检查`)
+  const existingKeys = new Set(existing.map(f => f.name + '|' + f.produce_date))
+
+  let success = 0, fail = 0, skipped = 0
+  for (const item of foodsToImport) {
+    if (!item.name || !item.produce_date || !item.shelf_life_days) {
+      logger.warn('import', '跳过无效条目', item)
+      fail++; continue
+    }
+    const key = item.name + '|' + item.produce_date
+    if (existingKeys.has(key)) { skipped++; continue }
+    try {
+      await foods.create({
+        name: item.name,
+        barcode: item.barcode || null,
+        produce_date: item.produce_date,
+        shelf_life_days: item.shelf_life_days,
+        category: item.category || null,
+        tags: item.tags || '[]'
+      })
+      success++
+      existingKeys.add(key)
+    } catch (e) {
+      logger.error('import', `创建食品失败: ${item.name}`, e.message)
+      fail++
+      if (e.message === '请先登录' || e.message.includes('登录已过期')) {
+        alert('登录已过期，请重新登录后再导入')
+        break
+      }
+    }
+  }
+
+  const list = await foods.getAll()
+  foodCount.value = list.length
+
+  logger.info('import', `导入完成: 成功${success}, 跳过${skipped}, 失败${fail}`)
+  const parts = [`成功 ${success} 条`]
+  if (skipped > 0) parts.push(`跳过 ${skipped} 条重复`)
+  if (fail > 0) parts.push(`失败 ${fail} 条`)
+  alert(`导入完成：${parts.join('，')}`)
+}
+
+const selectedCount = computed(() => Object.values(conflictSelected.value).filter(Boolean).length)
+
+function toggleTag(name) {
+  const cur = conflictSelected.value[name]
+  if (cur) {
+    conflictSelected.value = { ...conflictSelected.value, [name]: false }
+  } else if (selectedCount.value < MAX_TAGS) {
+    conflictSelected.value = { ...conflictSelected.value, [name]: true }
+  }
+}
+
+function allConflictTags() {
+  const all = []
+  for (const t of conflictExistingTags.value) {
+    all.push({ name: t, source: '已有' })
+  }
+  for (const t of conflictImportTags.value) {
+    if (!conflictExistingTags.value.includes(t)) {
+      all.push({ name: t, source: '导入' })
+    }
+  }
+  return all
+}
+
+async function resolveConflict(action) {
+  showTagConflict.value = false
+  importing.value = true
+  try {
+    if (action === 'cancel') {
+      logger.info('import', '用户放弃导入（标签冲突）')
+      pendingImportFoods.value = []
+      return
+    }
+
+    if (action === 'strip') {
+      logger.info('import', '用户选择导入但不带标签')
+      const stripped = pendingImportFoods.value.map(f => ({ ...f, tags: '[]' }))
+      await executeImport(stripped)
+      return
+    }
+
+    if (action === 'selected') {
+      const keep = new Set(Object.entries(conflictSelected.value).filter(([, v]) => v).map(([k]) => k))
+      logger.info('import', '用户选择保留部分标签导入', { keep: [...keep], count: keep.size })
+      const filtered = pendingImportFoods.value.map(f => {
+        let itemTags = []
+        try { itemTags = JSON.parse(f.tags || '[]') } catch {}
+        const kept = itemTags.filter(t => keep.has(t))
+        return { ...f, tags: JSON.stringify(kept) }
+      })
+      await executeImport(filtered)
+      return
+    }
+  } catch (e) {
+    logger.error('import', '导入异常', e.message)
+    alert('导入失败：' + e.message)
+  } finally {
+    importing.value = false
+    pendingImportFoods.value = []
   }
 }
 
@@ -163,14 +261,15 @@ const agreementType = ref('agreement')
 // 关于详情弹窗
 const showAbout = ref(false)
 const showChangelog = ref(false)
-const selectedChangelog = ref('v2.8.1-alpha')
+const showOpenSource = ref(false)
+const selectedChangelog = ref('v2.9.0-alpha')
 const showVersionDropdown = ref(false)
 
 import { changelogData, getGroupedVersions } from '../utils/changelog.js'
 
 const groupedVersions = getGroupedVersions()
 const currentChangelog = computed(() => changelogData[selectedChangelog.value])
-const collapsedGroups = ref(Object.fromEntries(Object.keys(groupedVersions).map(g => [g, g !== '2.7.x'])))
+const collapsedGroups = ref(Object.fromEntries(Object.keys(groupedVersions).map(g => [g, g !== '2.9.x'])))
 
 const avatarUrl = computed(() => {
   if (!user.value?.avatar_seed) return ''
@@ -214,6 +313,7 @@ async function mockLogin() {
     const list = await foods.getAll()
     foodCount.value = list.length
   } catch (e) {
+    logger.error('settings', '模拟登录失败', { error: e.message })
     alert('模拟登录失败：' + e.message)
   }
 }
@@ -224,6 +324,7 @@ onMounted(async () => {
       const list = await foods.getAll()
       foodCount.value = list.length
     } catch (e) {
+      logger.error('settings', '设置页加载食品数量失败', { error: e.message })
       foodCount.value = 0
     }
   }
@@ -614,9 +715,9 @@ onMounted(async () => {
               <span class="text-gray-700 font-medium">碳碳四键</span>
             </div>
 
-            <!-- 2. GitHub -->
-            <a href="https://github.com/Yuntian-Liu/Datelife" target="_blank"
-              class="flex items-center gap-3 py-1 -mx-1 px-1 rounded-lg hover:bg-gray-50 transition group">
+            <!-- 2. 开源声明 -->
+            <div @click="showOpenSource = true"
+              class="flex items-center gap-3 py-1 -mx-1 px-1 rounded-lg hover:bg-gray-50 transition cursor-pointer group">
               <div class="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center shrink-0">
                 <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
@@ -625,9 +726,9 @@ onMounted(async () => {
               <span class="text-gray-400 text-xs w-14 shrink-0">开源</span>
               <span class="text-gray-700 font-medium group-hover:text-primary-500 transition">MIT 开源项目</span>
               <svg class="w-3.5 h-3.5 text-gray-300 group-hover:text-primary-400 transition shrink-0 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
               </svg>
-            </a>
+            </div>
 
             <!-- 3. 反馈 -->
             <a href="mailto:it@ytunx.com"
@@ -661,6 +762,7 @@ onMounted(async () => {
               <p>Datelife 仍处于早期开发阶段，现有功能可能随时修改、调整或移除，不保证长期兼容。</p>
               <p>如果你有任何想法或建议，欢迎通过 GitHub Issue 或邮件反馈。也欢迎提交 PR 参与共建，一起让 Datelife 变得更好！</p>
             </div>
+
           </div>
           <div class="p-4 border-t border-gray-100 shrink-0">
             <button @click="showAbout = false"
@@ -737,6 +839,112 @@ onMounted(async () => {
                 </div>
               </div>
             </template>
+          </div>
+        </div>
+      </div>
+    </teleport>
+
+    <!-- 开源声明弹窗（三级） -->
+    <teleport to="body">
+      <div v-if="showOpenSource" class="fixed inset-0 z-[110] flex items-center justify-center p-4"
+        @click.self="showOpenSource = false">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+        <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-sm max-h-[80vh] flex flex-col m-4">
+          <div class="flex items-center gap-2 p-5 pb-0 shrink-0">
+            <button @click="showOpenSource = false" class="p-1 -ml-1 rounded-lg hover:bg-gray-100 transition text-gray-400 hover:text-gray-600">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <h2 class="text-lg font-semibold font-brand">开源声明</h2>
+          </div>
+          <div class="p-5 overflow-y-auto text-sm text-gray-500 leading-relaxed space-y-4">
+            <!-- MIT 声明 -->
+            <div class="bg-gray-50 rounded-xl p-4 text-xs text-gray-500 leading-relaxed space-y-2">
+              <p>Datelife 是一款基于 <strong class="text-gray-700">MIT 许可证</strong> 的开源项目，任何人都可以自由使用、修改和分发本项目的源代码。</p>
+              <p>我们相信开放透明的代码能让软件变得更好，也欢迎你通过 GitHub 参与共建。</p>
+              <a href="https://github.com/Yuntian-Liu/Datelife" target="_blank"
+                class="inline-flex items-center gap-1.5 text-primary-500 hover:text-primary-600 font-medium transition mt-1">
+                查看 GitHub 仓库
+                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </a>
+            </div>
+
+            <!-- 开源资源致谢 -->
+            <div>
+              <p class="text-xs font-semibold text-gray-600 mb-3">开源资源致谢</p>
+              <p class="text-xs text-gray-400 mb-3">Datelife 的开发离不开开源社区的支持，在此特别感谢以下开源资源：</p>
+              <div class="bg-gray-50 rounded-xl p-3 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-white flex items-center justify-center shrink-0 border border-gray-100">
+                  <svg class="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12,23a10.927,10.927,0,0,0,7.778-3.222,1,1,0,0,0,0-1.414L13.414,12l6.364-6.364a1,1,0,0,0,0-1.414A11,11,0,1,0,12,23ZM12,3a8.933,8.933,0,0,1,5.618,1.967l-6.325,6.326a1,1,0,0,0,0,1.414l6.325,6.326A9,9,0,1,1,12,3Z"/>
+                    <circle cx="21" cy="12" r="2"/>
+                    <circle cx="10" cy="7" r="2"/>
+                  </svg>
+                </div>
+                  <div class="text-xs text-gray-400 leading-relaxed space-y-1">
+                    <p class="text-gray-500 font-medium">「吃掉一件」图标</p>
+                    <p>源自 <strong class="text-gray-500">比赛 游戏 吃豆子冒险</strong></p>
+                    <p>作者 <a href="https://icon-icons.com/zh/authors/544-royyan-wijaya" target="_blank" class="text-primary-500 hover:text-primary-600 underline transition">Royyan Wijaya</a> · 来自 <a href="https://icon-icons.com/zh/authors/544-royyan-wijaya" target="_blank" class="text-primary-500 hover:text-primary-600 underline transition">Icon-Icons.com</a></p>
+                  </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </teleport>
+
+    <!-- 标签冲突弹窗 -->
+    <teleport to="body">
+      <div v-if="showTagConflict" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" @click.self="resolveConflict('cancel')">
+        <div class="bg-white rounded-2xl shadow-2xl w-[90vw] max-w-md max-h-[80vh] flex flex-col mx-4">
+          <div class="px-5 py-4 border-b border-gray-100 shrink-0">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-lg">&#x26A0;&#xFE0F;</span>
+              <span class="text-base font-semibold text-gray-800">标签数量超限</span>
+            </div>
+            <p class="text-sm text-gray-500">
+              导入数据包含 {{ conflictImportTags.length }} 个新标签，加上已有 {{ conflictExistingTags.length }} 个标签，共 {{ allConflictTags().length }} 个，超过 {{ MAX_TAGS }} 个标签的限制。请选择保留的标签（最多 {{ MAX_TAGS }} 个）。
+            </p>
+          </div>
+
+          <div class="flex-1 overflow-y-auto px-5 py-3 space-y-1">
+            <div v-for="tag in allConflictTags()" :key="tag.name"
+              @click="toggleTag(tag.name)"
+              :class="[
+                'flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition border',
+                conflictSelected[tag.name] ? 'bg-primary-50 border-primary-200' : 'bg-gray-50 border-gray-100 hover:bg-gray-100'
+              ]">
+              <div :class="[
+                'w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition',
+                conflictSelected[tag.name] ? 'bg-primary-500 border-primary-500' : 'border-gray-300'
+              ]">
+                <svg v-if="conflictSelected[tag.name]" class="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+              </div>
+              <span class="flex-1 text-sm font-medium text-gray-700">{{ tag.name }}</span>
+              <span :class="tag.source === '已有' ? 'bg-gray-100 text-gray-500' : 'bg-blue-50 text-blue-500'" class="text-xs px-2 py-0.5 rounded-full font-medium">{{ tag.source }}</span>
+            </div>
+          </div>
+
+          <div class="px-5 py-3 border-t border-gray-100 shrink-0 space-y-2">
+            <div class="text-xs text-gray-400 text-center">已选 {{ selectedCount }} / {{ MAX_TAGS }}</div>
+            <div class="flex gap-2">
+              <button @click="resolveConflict('cancel')"
+                class="flex-1 py-2.5 rounded-xl text-sm font-medium border border-gray-200 text-gray-500 hover:bg-gray-50 transition">
+                放弃导入
+              </button>
+              <button @click="resolveConflict('strip')"
+                class="flex-1 py-2.5 rounded-xl text-sm font-medium border border-gray-200 text-gray-500 hover:bg-gray-50 transition">
+                导入但不带标签
+              </button>
+              <button @click="resolveConflict('selected')"
+                :disabled="selectedCount === 0"
+                class="flex-1 py-2.5 rounded-xl text-sm font-medium bg-primary-500 text-white hover:bg-primary-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition">
+                保留所选并导入
+              </button>
+            </div>
           </div>
         </div>
       </div>

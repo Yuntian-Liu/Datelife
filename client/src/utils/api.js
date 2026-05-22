@@ -18,13 +18,17 @@ async function request(url, options = {}) {
   }
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: '请求失败' }))
+    const err = await res.json().catch(() => ({ error: `服务器返回 ${res.status} ${res.statusText}` }))
     logger.error('api', `失败: ${method} ${url} (${res.status})`, err.error)
     throw new Error(err.error)
   }
 
-  logger.info('api', `${method} ${url} → ${res.status}`)
-  return res.json()
+  const data = await res.json()
+  const summary = Array.isArray(data) ? { count: data.length }
+    : data && data.id ? { id: data.id }
+    : {}
+  logger.info('api', `${method} ${url} → ${res.status}`, summary)
+  return data
 }
 
 export const foods = {
@@ -33,6 +37,7 @@ export const foods = {
   create: (data) => request('/foods', { method: 'POST', body: JSON.stringify(data) }),
   update: (id, data) => request(`/foods/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (id) => request(`/foods/${id}`, { method: 'DELETE' }),
+  consume: (id) => request(`/foods/${id}/consume`, { method: 'POST' }),
   getTags: () => request('/foods/tags'),
   createTag: (name) => request('/foods/tags', { method: 'POST', body: JSON.stringify({ name }) }),
   deleteTag: (name) => request(`/foods/tags/${encodeURIComponent(name)}`, { method: 'DELETE' })

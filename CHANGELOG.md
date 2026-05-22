@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2.9.0-alpha] - 2026-05-22
+
+### Added
+
+- Food inventory management: set quantity per item, "eat one" button to decrement, auto-delete when last one consumed with "burp~" toast
+- Add/edit food standalone route pages (/foods/add, /foods/edit/:id), separated from the list view
+- Tag conflict resolution during data import: detect tag limit, support selective tag retention or strip-tags import
+- Version update notification: auto-show changelog modal on first visit after a new release
+
+### Changed
+
+- Page switching performance leap: route lazy loading + keep-alive component caching, instant page transitions
+- About page restructured: open source declaration moved to third-level page with MIT license notice and attribution for icon author Royyan Wijaya
+- Toast notifications: glassmorphism style, centered display, green variant for last-item deletion
+- PDF QR code printing: watermark moved to top layer, page numbers rendered via canvas to avoid font issues, failed cards auto-skipped
+- Tag color allocation algorithm: infinite loop guard
+- Diagnostic logs enhanced: new device info fields (devicePixelRatio / maxTouchPoints / reducedMotion), API request summaries, SW/barcode error log improvements
+
+---
+
 ## [2.8.2-alpha] - 2026-05-22
 
 ### Added

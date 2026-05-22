@@ -66,7 +66,7 @@ async function onScanSuccess(decodedText) {
   logger.info('scan', '扫码成功', { mode, resultType: decodedText.includes('/f/') ? 'qrcode' : 'barcode', prefix })
   clearTimeout(scanTimer)
   await stopScanner()
-  router.push('/foods?scanResult=' + encodeURIComponent(decodedText))
+  router.push('/foods/add?scanResult=' + encodeURIComponent(decodedText))
 }
 
 async function stopScanner() {
@@ -98,7 +98,7 @@ function onTimeoutGoBack() {
 function goBack() {
   logger.info('scan', '用户点返回')
   clearTimeout(scanTimer)
-  stopScanner().finally(() => router.replace('/foods?fromScan=1'))
+  stopScanner().finally(() => router.replace('/foods/add?fromScan=1'))
 }
 </script>
 

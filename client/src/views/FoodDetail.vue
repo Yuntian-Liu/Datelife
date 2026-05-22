@@ -82,7 +82,7 @@ function tagColor(name) {
   let idx = 0
   for (let i = 0; i < name.length; i++) idx += name.charCodeAt(i)
   let color = TAG_COLORS[idx % TAG_COLORS.length]
-  while (used.includes(color)) { idx++; color = TAG_COLORS[idx % TAG_COLORS.length] }
+  while (used.includes(color) && used.length < TAG_COLORS.length) { idx++; color = TAG_COLORS[idx % TAG_COLORS.length] }
   tagColorCache.set(name, color)
   return color
 }

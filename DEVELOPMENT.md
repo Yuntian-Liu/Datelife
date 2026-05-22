@@ -649,3 +649,27 @@ cd client && npm run dev
   - 移动端标签管理页删除按钮不可见：hover 依赖的 `opacity-0 group-hover:opacity-100` 改为 `opacity-100 md:opacity-0 md:group-hover:opacity-100`
   - 移动端添加食品页标签上限信息图标无法点击：触控区域 16px → 44px（`p-2`），`right-2.5` → `right-1` 补偿间距
   - 邀请码种子数据更新：除已使用的 `datelife-alpha-2026` 外，其余 10 个改为随机 6 位字母数字组合（`INSERT OR IGNORE` 幂等）
+
+### 2026-05-22
+
+- **v2.8.2-alpha 发布**：二维码 PDF 打印 + 筛选状态持久化
+  - 二维码 PDF 打印：`jspdf` 前端生成，Canvas 合成卡片（彩色 QR + 数字 + 名称 + 日期），A4 五列网格排版（30 个/页），品牌标题 + 斜铺水印，多页自动分页
+  - 食品管理筛选状态持久化：筛选/标签/搜索/排序写入 URL query，组件初始化从 URL 恢复，返回页面不丢失，底部导航重置筛选
+  - PDF 生成诊断日志：进度分批上报 + 总耗时记录
+  - 修复 SettingsView 版本日志弹窗默认选中旧版本（`selectedChangelog` 硬编码 v2.8.1）
+  - SW 缓存名更新为 `datelife-v282a`
+
+- **v2.9.0-alpha 发布**：食品库存管理 + 独立表单页 + 性能优化 + 版本更新提醒
+  - 食品库存管理：quantity 列迁移，支持设置数量，「吃掉一件」按钮（Pac-Man 图标，署名 Royyan Wijaya），最后一件确认删除，Toast 液态玻璃风格居中
+  - 添加/编辑食品独立路由页面：`FoodForm.vue` 从 `FoodsView.vue` 剥离，路由 `/foods/add`、`/foods/edit/:id`，扫码结果直达新增页
+  - 数据导入标签冲突处理：导入时检测标签上限（8 个），弹窗支持选择性保留/放弃标签或去标签导入
+  - 版本更新提醒：`App.vue` 中 `checkVersionUpdate()` 检测 localStorage 版本号，发版后首次打开弹窗展示 changelog
+  - 路由懒加载：所有页面组件改为 `() => import(...)` 动态导入，Vite 自动拆分 chunk
+  - keep-alive 组件缓存：`App.vue` 中 `<router-view>` 包裹 `<keep-alive>`，页面切换不销毁不重载
+  - 关于页面重构：MIT 开源声明独立三级页面（`showOpenSource`），含许可证说明 + 开源资源致谢
+  - PDF 二维码打印优化：水印移至最上层不遮挡二维码，页码 canvas 渲染避免字体兼容问题，失败卡片自动跳过
+  - 诊断日志增强：`getSystemInfo()` 新增 `devicePixelRatio`、`maxTouchPoints`、`reducedMotion`，API 日志带摘要，SW/条码错误日志完善
+  - 标签颜色分配防死循环保护：`while (used.includes(color))` 增加 `used.length < TAG_COLORS.length` 条件
+  - SW 缓存名更新为 `datelife-v290a`
+  - 版本号统一：`client/package.json`、`server/package.json`、README 徽章 → `2.9.0-alpha`
+  - CHANGELOG.md / CHANGELOG.zh-CN.md 添加 v2.9.0-alpha 条目
