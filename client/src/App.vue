@@ -79,6 +79,12 @@ onMounted(() => {
     })
     return () => { r1(); r2() }
   })()
+
+  setTimeout(() => {
+    import('./views/QRCodesView.vue')
+    import('./views/ScanView.vue')
+    import('./views/SettingsView.vue')
+  }, 3000)
 })
 
 onBeforeUnmount(() => {

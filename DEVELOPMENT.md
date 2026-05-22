@@ -690,6 +690,16 @@ cd client && npm run dev
   - SW 缓存名更新为 `datelife-v292a`
   - 版本号统一：`client/package.json`、`server/package.json`、README 徽章 → `2.9.2-alpha`
 
+- **v2.9.3-alpha 发布**：后台预加载 + FoodForm keep-alive 修复
+  - 后台预加载：`App.vue` `onMounted` 中 3 秒后 `import()` 预载 QRCodesView (406KB)、ScanView (374KB)、SettingsView (41KB)，用户点到时秒开
+  - 修复 `FoodForm.vue` keep-alive 导致的两个 bug：
+    - 连续添加食品时表单不清空（缓存复用不触发 `onMounted`）
+    - 编辑按钮跳到新增页（add/edit 共用组件，`editing` 未重新判断）
+  - 修复方式：`onMounted` 初始化逻辑抽成 `initForm()`，同时加 `onActivated(initForm)`，每次从缓存恢复时重新判断新增/编辑模式
+  - 用户向 changelog 新增「页面预加载优化」条目（属于特意优化的功能，可展示给用户）
+  - SW 缓存名更新为 `datelife-v293a`
+  - 版本号统一：`client/package.json`、`server/package.json`、README 徽章 → `2.9.3-alpha`
+
 ---
 
 ## 用户/开发者双轨版本日志策略

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, inject, computed } from 'vue'
+import { ref, onMounted, onActivated, inject, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { foods, barcode } from '../utils/api'
 import { logger } from '../utils/logger'
@@ -173,12 +173,11 @@ async function handleScanResult() {
   }
 }
 
-onMounted(async () => {
+async function initForm() {
   if (!isAuthenticated.value) { router.push('/foods'); return }
 
   try { allTags.value = await foods.getTags() } catch (e) { logger.warn('tags', '加载已有标签列表失败', { error: e.message }) }
 
-  // 编辑模式
   const id = route.params.id
   if (id) {
     try {
@@ -196,12 +195,14 @@ onMounted(async () => {
     logger.info('foods', '打开添加食品表单')
   }
 
-  // 扫码返回
   if (route.query.scanResult) handleScanResult()
   if (route.query.fromScan === '1') {
     const fq = { ...route.query }; delete fq.fromScan; router.replace({ query: fq })
   }
-})
+}
+
+onMounted(initForm)
+onActivated(initForm)
 </script>
 
 <template>

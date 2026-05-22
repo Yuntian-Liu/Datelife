@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2.9.3-alpha] - 2026-05-22
+
+### Added
+
+- Background preloading: heavy route chunks (QRCodesView, ScanView, SettingsView) auto-load 3s after app mount, eliminating first-visit download waits
+
+### Fixed
+
+- `FoodForm.vue` keep-alive cache causing stale form data on re-entry (extracted `initForm()`, added `onActivated`)
+- `FoodForm.vue` edit mode not activating after keep-alive reuse (add/edit share same component, `onMounted` didn't re-check mode)
+
+---
+
 ## [2.9.2-alpha] - 2026-05-22
 
 ### Added
