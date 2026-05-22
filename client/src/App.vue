@@ -81,9 +81,12 @@ onMounted(() => {
   })()
 
   setTimeout(() => {
-    import('./views/QRCodesView.vue')
-    import('./views/ScanView.vue')
-    import('./views/SettingsView.vue')
+    logger.info('app', '后台预加载开始')
+    Promise.all([
+      import('./views/QRCodesView.vue'),
+      import('./views/ScanView.vue'),
+      import('./views/SettingsView.vue')
+    ]).then(() => logger.info('app', '后台预加载完成'))
   }, 3000)
 })
 
