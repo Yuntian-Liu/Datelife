@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed, inject } from 'vue'
+import { ref, onMounted, onActivated, computed, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { foods } from '../utils/api'
 import { useConfirm } from '../composables/useConfirm'
@@ -52,6 +52,7 @@ async function loadTags() {
 }
 
 onMounted(loadTags)
+onActivated(loadTags)
 
 async function addTag() {
   const t = tagInput.value.trim()

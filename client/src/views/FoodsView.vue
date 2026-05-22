@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, inject, watch, computed } from 'vue'
+import { ref, onMounted, onActivated, inject, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { foods } from '../utils/api'
 import { useConfirm } from '../composables/useConfirm'
@@ -127,13 +127,16 @@ const filteredList = computed(() => {
   return list
 })
 
-onMounted(async () => {
+async function loadFoods() {
   if (isAuthenticated.value) {
     try { foodList.value = await foods.getAll() } catch (e) { logger.error('foods', '食品列表加载失败', { error: e.message }) }
     try { allTags.value = await foods.getTags() } catch (e) { logger.warn('tags', '加载已有标签列表失败', { error: e.message }) }
   }
   loading.value = false
-})
+}
+
+onMounted(loadFoods)
+onActivated(loadFoods)
 
 // 筛选状态变化时同步到 URL
 watch(
@@ -391,7 +394,7 @@ function syncFiltersToQuery() {
 
     <!-- Toast -->
     <teleport to="body">
-      <div v-if="toastLine1" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[200] backdrop-blur-md text-sm px-5 py-3 rounded-2xl shadow-xl transition-all duration-300 max-w-[280px] text-center"
+      <div v-if="toastLine1" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[200] backdrop-blur-md text-sm px-6 py-3 rounded-2xl shadow-xl transition-all duration-300 max-w-[90vw] sm:max-w-sm text-center"
         :class="toastDone ? 'bg-green-50/80 border border-green-100/50 text-green-700' : 'bg-white/80 border border-gray-100/50 text-gray-700'">
         <p class="break-all">{{ toastLine1 }}</p>
         <p class="mt-0.5">{{ toastLine2 }}</p>

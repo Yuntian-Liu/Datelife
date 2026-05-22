@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, inject, computed } from 'vue'
+import { ref, onMounted, onActivated, inject, computed } from 'vue'
 import { jsPDF } from 'jspdf'
 import { foods } from '../utils/api'
 import { logger } from '../utils/logger'
@@ -9,7 +9,7 @@ const foodList = ref([])
 const loading = ref(true)
 const downloadingPDF = ref(false)
 
-onMounted(async () => {
+async function loadQRCodes() {
   if (isAuthenticated.value) {
     try {
       foodList.value = await foods.getAll()
@@ -19,7 +19,10 @@ onMounted(async () => {
     }
   }
   loading.value = false
-})
+}
+
+onMounted(loadQRCodes)
+onActivated(loadQRCodes)
 
 function qrUrl(id) {
   return `/api/foods/${id}/qrcode`

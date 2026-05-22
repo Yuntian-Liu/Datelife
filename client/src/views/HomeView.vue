@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, inject, computed } from 'vue'
+import { ref, onMounted, onActivated, inject, computed } from 'vue'
 import { foods } from '../utils/api'
 import { getBadge } from '../utils/badges'
 import { logger } from '../utils/logger'
@@ -10,7 +10,7 @@ const badge = computed(() => getBadge(user.value?.badge))
 const foodList = ref([])
 const loading = ref(true)
 
-onMounted(async () => {
+async function loadHome() {
   if (isAuthenticated.value) {
     try {
       foodList.value = await foods.getAll()
@@ -20,7 +20,10 @@ onMounted(async () => {
     }
   }
   loading.value = false
-})
+}
+
+onMounted(loadHome)
+onActivated(loadHome)
 
 const stats = computed(() => {
   const total = foodList.value.length

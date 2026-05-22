@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2.9.1-alpha] - 2026-05-22
+
+### Fixed
+
+- Toast overflow on mobile with long food names: split into two lines with `break-all` wrapping
+- Keep-alive cached pages not refreshing data after navigation: added `onActivated` hooks to 4 main views
+- Service Worker cache name bumped to `v291a`
+
+---
+
 ## [2.9.0-alpha] - 2026-05-22
 
 ### Added

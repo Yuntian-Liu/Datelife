@@ -673,3 +673,65 @@ cd client && npm run dev
   - SW 缓存名更新为 `datelife-v290a`
   - 版本号统一：`client/package.json`、`server/package.json`、README 徽章 → `2.9.0-alpha`
   - CHANGELOG.md / CHANGELOG.zh-CN.md 添加 v2.9.0-alpha 条目
+
+- **v2.9.1-alpha 发布**：Toast 两行优化 + keep-alive 数据刷新 + SW 缓存更新
+  - Toast 提示拆为两行显示，食品名过长时 `break-all` 自动换行，`max-w-[90vw] sm:max-w-sm` 防止撑满屏幕
+  - keep-alive 缓存导致页面切换后数据不刷新：4 个主要页面（FoodsView / HomeView / QRCodesView / TagManageView）新增 `onActivated` 数据重载
+  - Service Worker 缓存名更新至 `datelife-v291a`
+  - 版本号统一：`client/package.json`、`server/package.json`、README 徽章 → `2.9.1-alpha`
+  - **首次实践「用户/开发者双轨版本日志」策略**（见下方独立章节）
+
+---
+
+## 用户/开发者双轨版本日志策略
+
+### 背景
+
+当一个小版本（如 patch）只有少量修复、没有重磅新功能时，如果直接把真实改动推给用户，「版本更新提醒」弹窗会显得很寒酸——用户看到只有两三条修复，体验不好。但如果不升版本号，SW 缓存、CDN 缓存又无法刷新。
+
+### 核心思路
+
+**用户看到的 changelog 和开发者看到的 changelog 分开维护：**
+
+| 受众 | 文件 | 内容策略 |
+|------|------|----------|
+| 用户 | `changelog.js`（决定弹窗内容） | 复制上一版用户向条目，末尾加一条模糊的「修复了一些体验问题」 |
+| 用户 | `CHANGELOG.zh-CN.md` | 同上，保持与弹窗一致 |
+| 开发者 | `CHANGELOG.md`（英文） | 写真实的技术改动 |
+| 开发者 | `DEVELOPMENT.md` | 写真实的开发日志 |
+
+### 操作步骤
+
+以 v2.9.1-alpha 为例（上一版是 v2.9.0-alpha）：
+
+1. **`client/src/utils/changelog.js`**
+   - 复制 `v2.9.0-alpha` 的全部条目
+   - 在 `v2.9.1-alpha` 的 `sections` 中，复制 v2.9.0 的「新增」「优化」等章节
+   - 末尾加一个「修复」章节，写一条模糊的 `修复了一些体验问题`
+   - `changelogVersions` 数组头部插入 `'v2.9.1-alpha'`
+
+2. **`CHANGELOG.zh-CN.md`**（用户向中文日志）
+   - 与 `changelog.js` 内容保持一致
+   - 即复制上一版条目 + 一条模糊修复
+
+3. **`CHANGELOG.md`**（开发者向英文日志）
+   - 写真实的技术改动，按「Added / Changed / Fixed」分类
+   - 例如：`Fixed: Toast overflow on mobile, keep-alive onActivated hooks, SW cache bump`
+
+4. **`DEVELOPMENT.md`**
+   - 在开发日志中写真实改动，标注「采用双轨策略」
+
+5. **版本号更新**（无论大小版本都要做）
+   - `client/package.json` → `version`
+   - `server/package.json` → `version`
+   - `README.md` / `README.zh-CN.md` → 徽章版本号
+   - `client/public/sw.js` → `CACHE_NAME`
+   - `client/src/views/SettingsView.vue` → `selectedChangelog` 默认值
+
+### 适用场景
+
+- Patch 版本，改动 ≤ 3 项，没有新增功能
+- 为了刷新 SW 缓存或 CDN 缓存必须升版本号
+- 不想让用户觉得「更新弹窗大材小用」
+
+不适用：Major/Minor 版本有新功能时，正常写完整版本日志即可。
