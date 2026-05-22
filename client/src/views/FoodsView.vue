@@ -47,7 +47,8 @@ const showTagFilter = ref(false)
 const sortBy = ref(route.query.sort === 'expiry' ? 'expiry' : 'time')
 
 // toast
-const toastMsg = ref('')
+const toastLine1 = ref('')
+const toastLine2 = ref('')
 const toastDone = ref(false)
 
 async function consumeFood(food) {
@@ -65,18 +66,20 @@ async function consumeFood(food) {
     const result = await foods.consume(food.id)
     if (result.deleted) {
       foodList.value = foodList.value.filter(f => f.id !== food.id)
-      toastMsg.value = '已吃掉最后一件「' + food.name + '」，已删除，嗝~'
+      toastLine1.value = '已吃掉最后一件「' + food.name + '」'
+      toastLine2.value = '已删除，嗝~'
       toastDone.value = true
     } else {
       food.quantity = result.quantity
-      toastMsg.value = '已吃掉一件「' + food.name + '」，还剩 ' + result.quantity + ' 件，嗝~'
+      toastLine1.value = '已吃掉一件「' + food.name + '」'
+      toastLine2.value = '还剩 ' + result.quantity + ' 件，嗝~'
       toastDone.value = false
     }
     logger.info('foods', '吃掉一件', { foodId: food.id, name: food.name, result })
   } catch (e) {
     logger.error('foods', '吃掉一件失败', { foodId: food.id, error: e.message })
   }
-  setTimeout(() => { toastMsg.value = '' }, 2000)
+  setTimeout(() => { toastLine1.value = ''; toastLine2.value = '' }, 2000)
 }
 
 // 标签筛选
@@ -388,9 +391,10 @@ function syncFiltersToQuery() {
 
     <!-- Toast -->
     <teleport to="body">
-      <div v-if="toastMsg" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[200] backdrop-blur-md text-sm px-5 py-3 rounded-2xl shadow-xl transition-all duration-300 whitespace-nowrap"
+      <div v-if="toastLine1" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[200] backdrop-blur-md text-sm px-5 py-3 rounded-2xl shadow-xl transition-all duration-300 max-w-[280px] text-center"
         :class="toastDone ? 'bg-green-50/80 border border-green-100/50 text-green-700' : 'bg-white/80 border border-gray-100/50 text-gray-700'">
-        {{ toastMsg }}
+        <p class="break-all">{{ toastLine1 }}</p>
+        <p class="mt-0.5">{{ toastLine2 }}</p>
       </div>
     </teleport>
   </div>
