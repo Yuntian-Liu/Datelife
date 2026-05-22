@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, provide, ref, watch } from 'vue'
+import { computed, onMounted, onBeforeUnmount, provide, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from './composables/useAuth'
 import { logger } from './utils/logger'
@@ -7,6 +7,7 @@ import { changelogData } from './utils/changelog.js'
 import DesktopHeader from './components/DesktopHeader.vue'
 import BottomNav from './components/BottomNav.vue'
 import Watermark from './components/Watermark.vue'
+import RouteLoading from './components/RouteLoading.vue'
 
 const UPDATE_KEY = 'datelife_last_seen_version'
 
@@ -49,9 +50,39 @@ function handleAdd() {
   }
 }
 
+const isRouteLoading = ref(false)
+const showLoadingMessage = ref(false)
+let loadingTimer = null
+let messageTimer = null
+let removeRouteGuards = null
+
 onMounted(() => {
   logger.info('app', 'App 初始化', { route: route.path, isAuthenticated: isAuthenticated.value, isDev: import.meta.env.DEV })
   checkVersionUpdate()
+
+  removeRouteGuards = (() => {
+    const r1 = router.beforeEach(() => {
+      clearTimeout(loadingTimer)
+      clearTimeout(messageTimer)
+      isRouteLoading.value = false
+      showLoadingMessage.value = false
+
+      loadingTimer = setTimeout(() => { isRouteLoading.value = true }, 300)
+      messageTimer = setTimeout(() => { showLoadingMessage.value = true }, 1500)
+      return true
+    })
+    const r2 = router.afterEach(() => {
+      clearTimeout(loadingTimer)
+      clearTimeout(messageTimer)
+      isRouteLoading.value = false
+      showLoadingMessage.value = false
+    })
+    return () => { r1(); r2() }
+  })()
+})
+
+onBeforeUnmount(() => {
+  if (removeRouteGuards) removeRouteGuards()
 })
 
 watch(() => route.path, (to, from) => {
@@ -61,6 +92,7 @@ watch(() => route.path, (to, from) => {
 
 <template>
   <div class="min-h-screen bg-bg font-body">
+    <RouteLoading :visible="isRouteLoading" :show-message="showLoadingMessage" />
     <DesktopHeader v-if="showNav" @add="handleAdd" />
     <router-view v-slot="{ Component }">
       <keep-alive>

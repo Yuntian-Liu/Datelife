@@ -32,7 +32,7 @@ async function loadFood() {
 }
 
 onMounted(loadFood)
-watch(() => route.params.id, loadFood)
+watch(() => route.params.id, (id) => { if (id) loadFood() })
 
 function statusLabel(f) {
   if (f.status === 'expired') return '已过期'

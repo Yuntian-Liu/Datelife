@@ -681,6 +681,15 @@ cd client && npm run dev
   - 版本号统一：`client/package.json`、`server/package.json`、README 徽章 → `2.9.1-alpha`
   - **首次实践「用户/开发者双轨版本日志」策略**（见下方独立章节）
 
+- **v2.9.2-alpha 发布**：路由加载过渡 + FoodDetail watch 修复
+  - 路由加载过渡：新增 `RouteLoading.vue`，顶部 2.5px 绿色渐变滑动进度条（300ms 延迟），1.5s 后叠加液态玻璃温馨提示卡片（「稍等片刻」品牌字体标题 + 🍱 Datelife 正在为你准备页面...）
+  - 进度条和卡片均有淡入淡出过渡动画，`keep-alive` 缓存命中时完全不显示（<300ms 即完成）
+  - `App.vue` 中注册 `router.beforeEach` / `router.afterEach` 导航守卫，管理 loading 和 message 两个 timer
+  - 修复 `FoodDetail.vue` watch `route.params.id` 在返回列表时 id 变 `undefined` 触发 `/foods/undefined` 404 请求（加 `if (id)` 判空）
+  - 修正 `DEVELOPMENT.md` 双轨策略文档：`CHANGELOG.md` / `CHANGELOG.zh-CN.md` 均为开发者向（GitHub 公开），仅 `changelog.js` 为用户向
+  - SW 缓存名更新为 `datelife-v292a`
+  - 版本号统一：`client/package.json`、`server/package.json`、README 徽章 → `2.9.2-alpha`
+
 ---
 
 ## 用户/开发者双轨版本日志策略
@@ -695,26 +704,21 @@ cd client && npm run dev
 
 | 受众 | 文件 | 内容策略 |
 |------|------|----------|
-| 用户 | `changelog.js`（决定弹窗内容） | 复制上一版用户向条目，末尾加一条模糊的「修复了一些体验问题」 |
-| 用户 | `CHANGELOG.zh-CN.md` | 同上，保持与弹窗一致 |
-| 开发者 | `CHANGELOG.md`（英文） | 写真实的技术改动 |
+| 用户 | `changelog.js`（决定弹窗内容和设置页版本日志） | 复制上一版用户向条目，末尾加一条模糊的「修复了一些体验问题」 |
+| 开发者 | `CHANGELOG.md` / `CHANGELOG.zh-CN.md` | 写真实的技术改动（GitHub 上公开可见） |
 | 开发者 | `DEVELOPMENT.md` | 写真实的开发日志 |
 
 ### 操作步骤
 
 以 v2.9.1-alpha 为例（上一版是 v2.9.0-alpha）：
 
-1. **`client/src/utils/changelog.js`**
+1. **`client/src/utils/changelog.js`**（唯一用户向文件）
    - 复制 `v2.9.0-alpha` 的全部条目
    - 在 `v2.9.1-alpha` 的 `sections` 中，复制 v2.9.0 的「新增」「优化」等章节
    - 末尾加一个「修复」章节，写一条模糊的 `修复了一些体验问题`
    - `changelogVersions` 数组头部插入 `'v2.9.1-alpha'`
 
-2. **`CHANGELOG.zh-CN.md`**（用户向中文日志）
-   - 与 `changelog.js` 内容保持一致
-   - 即复制上一版条目 + 一条模糊修复
-
-3. **`CHANGELOG.md`**（开发者向英文日志）
+2. **`CHANGELOG.md` / `CHANGELOG.zh-CN.md`**（开发者向，GitHub 公开）
    - 写真实的技术改动，按「Added / Changed / Fixed」分类
    - 例如：`Fixed: Toast overflow on mobile, keep-alive onActivated hooks, SW cache bump`
 

@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2.9.2-alpha] - 2026-05-22
+
+### Added
+
+- Route loading indicator: `RouteLoading.vue` with animated green progress bar + glassmorphism warm message card for first-time lazy-loaded page visits
+
+### Fixed
+
+- `FoodDetail.vue` triggering `GET /foods/undefined` 404 when navigating back to list (added id guard in `watch`)
+
+---
+
 ## [2.9.1-alpha] - 2026-05-22
 
 ### Fixed
