@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2.9.4-alpha] - 2026-05-22
+
+### Fixed
+
+- `ScanView.vue` keep-alive cache causing black screen / wrong scan mode: added `onDeactivated` to stop camera and `onActivated` to re-init with correct mode
+
+---
+
 ## [2.9.3-alpha] - 2026-05-22
 
 ### Added

@@ -700,6 +700,14 @@ cd client && npm run dev
   - SW 缓存名更新为 `datelife-v293a`
   - 版本号统一：`client/package.json`、`server/package.json`、README 徽章 → `2.9.3-alpha`
 
+- **v2.9.4-alpha 发布**：ScanView keep-alive 修复
+  - 修复 `ScanView.vue` keep-alive 缓存导致扫码黑屏/模式错乱：
+    - 离开扫码页时 `onDeactivated` 停摄像头、清扫描器实例
+    - 返回扫码页时 `onActivated` 重新读取 `route.query.mode`、重新初始化扫描器
+    - `mode` 从 `const` 改为 `ref`（`currentMode`），支持动态切换
+  - SW 缓存名更新为 `datelife-v294a`
+  - 版本号统一：`client/package.json`、`server/package.json`、README 徽章 → `2.9.4-alpha`
+
 ---
 
 ## 用户/开发者双轨版本日志策略

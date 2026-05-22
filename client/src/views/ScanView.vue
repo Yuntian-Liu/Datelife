@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, onActivated, onDeactivated, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode'
 import { logger } from '../utils/logger'
@@ -7,19 +7,21 @@ import { logger } from '../utils/logger'
 const route = useRoute()
 const router = useRouter()
 
-const mode = route.query.mode === 'qrcode' ? 'qrcode' : 'barcode'
+const currentMode = ref(route.query.mode === 'qrcode' ? 'qrcode' : 'barcode')
 const status = ref('正在启动摄像头...')
 const error = ref('')
 const showTimeoutHint = ref(false)
 let scanner = null
 let scanTimer = null
 
-onMounted(async () => {
+async function initScan() {
+  currentMode.value = route.query.mode === 'qrcode' ? 'qrcode' : 'barcode'
+  const mode = currentMode.value
+  error.value = ''
   await nextTick()
   startTimeoutTimer()
 
   const isMobile = window.innerWidth < 640
-  // 用屏幕实际比例作为 aspectRatio，让视频流铺满容器避免黑边
   const screenRatio = window.innerWidth / window.innerHeight
   const config = mode === 'barcode'
     ? {
@@ -51,15 +53,21 @@ onMounted(async () => {
     logger.error('scan', '摄像头启动失败', { mode, error: e.message })
     error.value = '无法启动摄像头：' + e.message
   }
-})
+}
 
-onBeforeUnmount(async () => {
+async function cleanupScan() {
   clearTimeout(scanTimer)
+  showTimeoutHint.value = false
   if (scanner) {
     try { await scanner.stop(); scanner.clear() } catch {}
     scanner = null
   }
-})
+}
+
+onMounted(initScan)
+onActivated(initScan)
+onDeactivated(cleanupScan)
+onBeforeUnmount(cleanupScan)
 
 async function onScanSuccess(decodedText) {
   const prefix = decodedText.length > 20 ? decodedText.slice(0, 20) + '...' : decodedText
@@ -113,7 +121,7 @@ function goBack() {
         <span class="text-sm">返回</span>
       </button>
       <span class="text-white/90 text-sm font-medium font-brand tracking-wide">
-        {{ mode === 'barcode' ? '扫条形码' : '扫二维码' }}
+        {{ currentMode === 'barcode' ? '扫条形码' : '扫二维码' }}
       </span>
       <div class="w-14"></div>
     </div>
@@ -139,7 +147,7 @@ function goBack() {
           <button @click="goBack" class="bg-white/20 hover:bg-white/30 text-white px-6 py-2.5 rounded-full text-sm font-medium transition">返回</button>
         </div>
       </div>
-      <div id="scanner" class="w-full h-full" :class="{ 'has-guide-line': mode === 'barcode' }"></div>
+      <div id="scanner" class="w-full h-full" :class="{ 'has-guide-line': currentMode === 'barcode' }"></div>
       <!-- 底部提示 -->
       <div class="absolute bottom-10 left-0 right-0 text-center pointer-events-none z-10">
         <p class="inline-block bg-black/40 backdrop-blur-sm text-white/70 text-xs px-4 py-1.5 rounded-full">{{ status }}</p>
