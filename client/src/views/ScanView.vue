@@ -14,7 +14,11 @@ const showTimeoutHint = ref(false)
 let scanner = null
 let scanTimer = null
 
+let initLock = false
+
 async function initScan() {
+  if (initLock) return
+  initLock = true
   currentMode.value = route.query.mode === 'qrcode' ? 'qrcode' : 'barcode'
   const mode = currentMode.value
   error.value = ''
@@ -52,6 +56,8 @@ async function initScan() {
   } catch (e) {
     logger.error('scan', '摄像头启动失败', { mode, error: e.message })
     error.value = '无法启动摄像头：' + e.message
+  } finally {
+    initLock = false
   }
 }
 

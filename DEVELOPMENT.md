@@ -708,6 +708,14 @@ cd client && npm run dev
   - SW 缓存名更新为 `datelife-v294a`
   - 版本号统一：`client/package.json`、`server/package.json`、README 徽章 → `2.9.4-alpha`
 
+- **v2.9.5-alpha 发布**：keep-alive 双重初始化修复
+  - 核心问题：keep-alive 首次挂载时 `onMounted` + `onActivated` 同时触发，导致双重初始化
+  - 修复 `HomeView.vue`：`loadHome()` 加 `initLock` 防重入，消除首页数据双重请求
+  - 修复 `FoodForm.vue`：`initForm()` 开头同步调用 `resetForm()`，消除 keep-alive 恢复时的旧数据闪烁
+  - 修复 `ScanView.vue`：`initScan()` 加 `initLock` 防重入，消除首次打开时两个摄像头实例叠加导致的画面分裂
+  - SW 缓存名更新为 `datelife-v295a`
+  - 版本号统一：`client/package.json`、`server/package.json`、README 徽章 → `2.9.5-alpha`
+
 ---
 
 ## 用户/开发者双轨版本日志策略

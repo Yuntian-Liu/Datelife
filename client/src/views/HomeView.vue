@@ -10,7 +10,11 @@ const badge = computed(() => getBadge(user.value?.badge))
 const foodList = ref([])
 const loading = ref(true)
 
+let initLock = false
+
 async function loadHome() {
+  if (initLock) return
+  initLock = true
   if (isAuthenticated.value) {
     try {
       foodList.value = await foods.getAll()
@@ -20,6 +24,7 @@ async function loadHome() {
     }
   }
   loading.value = false
+  initLock = false
 }
 
 onMounted(loadHome)

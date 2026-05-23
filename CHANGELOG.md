@@ -4,7 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ---
 
-## [2.9.4-alpha] - 2026-05-22
+## [2.9.5-alpha] - 2026-05-23
+
+### Fixed
+
+- `HomeView.vue` keep-alive 导致首次挂载时 `onMounted` + `onActivated` 双重触发，首页数据被请求两次（`initLock` 防重入）
+- `FoodForm.vue` keep-alive 恢复时先显示缓存旧数据再刷新，出现短暂闪烁（`initForm()` 开头同步调用 `resetForm()` 立即清空）
+- `ScanView.vue` 首次打开时 `onMounted` + `onActivated` 同时触发导致两个摄像头实例叠加、画面分裂为两块（`initLock` 防重入）
+
+---
+
+## [2.9.4-alpha] - 2026-05-23
 
 ### Fixed
 

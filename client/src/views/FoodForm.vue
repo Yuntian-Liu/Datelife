@@ -174,6 +174,7 @@ async function handleScanResult() {
 }
 
 async function initForm() {
+  resetForm()
   if (!isAuthenticated.value) { router.push('/foods'); return }
 
   try { allTags.value = await foods.getTags() } catch (e) { logger.warn('tags', '加载已有标签列表失败', { error: e.message }) }
