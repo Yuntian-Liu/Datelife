@@ -1,6 +1,6 @@
 {
   "name": "server",
-  "version": "2.9.5-alpha",
+  "version": "2.9.6-alpha",
   "description": "",
   "main": "index.js",
   "directories": {

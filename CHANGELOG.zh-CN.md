@@ -4,6 +4,14 @@
 
 ---
 
+## [2.9.6-alpha] - 2026-05-23
+
+### 修复
+
+- ScanView v2.9.4 将模块级 const mode 改为 currentMode ref 后，onScanSuccess 和 startTimeoutTimer 回调仍引用不存在的 mode 变量导致 ReferenceError 崩溃，表现为扫码无响应且超时提示不弹窗
+
+---
+
 ## [2.9.5-alpha] - 2026-05-23
 
 ### 修复

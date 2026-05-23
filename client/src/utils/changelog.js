@@ -1,4 +1,5 @@
 export const changelogVersions = [
+  { version: 'v2.9.6-alpha', date: '2026-05-23', group: '2.9.x' },
   { version: 'v2.9.5-alpha', date: '2026-05-23', group: '2.9.x' },
   { version: 'v2.9.4-alpha', date: '2026-05-23', group: '2.9.x' },
   { version: 'v2.9.3-alpha', date: '2026-05-22', group: '2.9.x' },
@@ -32,6 +33,44 @@ export const changelogVersions = [
 ]
 
 export const changelogData = {
+  'v2.9.6-alpha': {
+    date: '2026-05-23',
+    sections: [
+      {
+        type: '新增',
+        color: 'green',
+        items: [
+          '食品库存管理：支持设置数量，一键「吃掉一件」减少库存，最后一件吃掉自动清理并提示"嗝~"',
+          '添加/编辑食品独立路由页面（/foods/add、/foods/edit/:id），不再内嵌列表页，扫码结果直达新增页',
+          '数据导入标签冲突处理：检测标签上限，支持选择性保留标签或去标签导入',
+          '版本更新提醒：发版后首次打开自动弹窗展示更新日志'
+        ]
+      },
+      {
+        type: '优化',
+        color: 'blue',
+        items: [
+          '页面切换性能跃升：路由懒加载 + keep-alive 组件缓存，页面秒切不再卡顿',
+          '页面预加载优化：首页加载后自动后台预载二维码等重页面，首次访问不再长时间等待',
+          '关于页面重构：开源声明独立三级页面，含 MIT 许可证说明与开源资源致谢，署名图标作者 Royyan Wijaya',
+          'Toast 提示液态玻璃风格居中显示，最后一件绿色玻璃区分',
+          'PDF 二维码打印：水印移至最上层，页码 canvas 渲染避免字体缺失，合成失败卡片自动跳过',
+          '标签颜色分配算法防死循环保护',
+          '诊断日志全面增强：新增设备信息字段（devicePixelRatio / maxTouchPoints / reducedMotion），API 请求摘要信息，SW/条码错误日志完善'
+        ]
+      },
+      {
+        type: '修复',
+        color: 'red',
+        items: [
+          '修复首页首次访问时数据被请求两次的问题',
+          '修复添加/编辑食品页面切换时旧数据闪现的问题',
+          '修复扫码页面首次打开时画面分裂为两块的问题',
+          '修复扫码页面扫码无响应、10 秒超时提示不弹窗的问题'
+        ]
+      }
+    ]
+  },
   'v2.9.5-alpha': {
     date: '2026-05-23',
     sections: [

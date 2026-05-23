@@ -76,11 +76,16 @@ onDeactivated(cleanupScan)
 onBeforeUnmount(cleanupScan)
 
 async function onScanSuccess(decodedText) {
-  const prefix = decodedText.length > 20 ? decodedText.slice(0, 20) + '...' : decodedText
-  logger.info('scan', '扫码成功', { mode, resultType: decodedText.includes('/f/') ? 'qrcode' : 'barcode', prefix })
-  clearTimeout(scanTimer)
-  await stopScanner()
-  router.push('/foods/add?scanResult=' + encodeURIComponent(decodedText))
+  try {
+    const prefix = decodedText.length > 20 ? decodedText.slice(0, 20) + '...' : decodedText
+    logger.info('scan', '扫码成功', { mode: currentMode.value, resultType: decodedText.includes('/f/') ? 'qrcode' : 'barcode', prefix })
+    clearTimeout(scanTimer)
+    await stopScanner()
+    router.push('/foods/add?scanResult=' + encodeURIComponent(decodedText))
+  } catch (e) {
+    logger.error('scan', '扫码回调异常', { error: e.message, decodedText })
+    clearTimeout(scanTimer)
+  }
 }
 
 async function stopScanner() {
@@ -93,7 +98,7 @@ async function stopScanner() {
 function startTimeoutTimer() {
   clearTimeout(scanTimer)
   scanTimer = setTimeout(() => {
-    logger.warn('scan', '扫码超时提醒触发', { mode })
+    logger.warn('scan', '扫码超时提醒触发', { mode: currentMode.value })
     showTimeoutHint.value = true
   }, 10000)
 }

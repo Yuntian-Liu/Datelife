@@ -4,13 +4,21 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2.9.6-alpha] - 2026-05-23
+
+### Fixed
+
+- `ScanView.vue` ReferenceError crash after v2.9.4 changed module-level `const mode` to `currentMode` ref: `onScanSuccess` and `startTimeoutTimer` callbacks still referenced the now-undefined `mode` variable, causing scan results to be silently dropped and the 10s timeout hint to never appear
+
+---
+
 ## [2.9.5-alpha] - 2026-05-23
 
 ### Fixed
 
-- `HomeView.vue` keep-alive 导致首次挂载时 `onMounted` + `onActivated` 双重触发，首页数据被请求两次（`initLock` 防重入）
-- `FoodForm.vue` keep-alive 恢复时先显示缓存旧数据再刷新，出现短暂闪烁（`initForm()` 开头同步调用 `resetForm()` 立即清空）
-- `ScanView.vue` 首次打开时 `onMounted` + `onActivated` 同时触发导致两个摄像头实例叠加、画面分裂为两块（`initLock` 防重入）
+- `HomeView.vue` keep-alive causing duplicate `GET /foods` on first mount (`onMounted` + `onActivated` both firing): added `initLock` guard to `loadHome()`
+- `FoodForm.vue` keep-alive causing stale data flash on re-entry (cached old form data visible before async refresh): added `resetForm()` at start of `initForm()` 
+- `ScanView.vue` keep-alive causing split-screen on first open (two camera instances from dual `initScan()` calls): added `initLock` guard
 
 ---
 

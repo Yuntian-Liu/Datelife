@@ -716,6 +716,15 @@ cd client && npm run dev
   - SW 缓存名更新为 `datelife-v295a`
   - 版本号统一：`client/package.json`、`server/package.json`、README 徽章 → `2.9.5-alpha`
 
+- **v2.9.6-alpha 发布**：ScanView 变量引用错误修复
+  - 修复 `ScanView.vue`：v2.9.4 将模块级 `const mode` 改为 `currentMode` ref 后，`onScanSuccess`（第 80 行）和 `startTimeoutTimer` 的 setTimeout 回调（第 96 行）仍引用不存在的 `mode` 变量
+  - 两个回调执行时抛出 ReferenceError 崩溃：
+    - `onScanSuccess` 崩溃 → `router.push` 未执行，扫码成功但无法跳转
+    - setTimeout 回调崩溃 → `showTimeoutHint.value = true` 未执行，超时提示不弹窗
+  - 修复方式：`{ mode }` → `{ mode: currentMode.value }`
+  - SW 缓存名更新为 `datelife-v296a`
+  - 版本号统一：`client/package.json`、`server/package.json`、README 徽章 → `2.9.6-alpha`
+
 ---
 
 ## 用户/开发者双轨版本日志策略
