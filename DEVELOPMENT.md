@@ -750,6 +750,12 @@ cd client && npm run dev
   - 版本号统一：`client/package.json`、`server/package.json`、README 徽章 → `2.9.7-alpha`
   - **停止双轨策略**：用户确认旧版本已覆盖完毕，changelog.js 只写本次真实改动
 
+- **v2.9.8-alpha 发布**：扫码状态显示修复（双轨策略）
+  - 修复 `FoodForm.vue` `handleScanResult()` 中 `resetForm()` 和 `scanStatus.value` 的调用顺序：`resetForm()` 会清空 `scanStatus`，必须先 reset 再设状态
+  - 采用双轨策略：changelog.js 复制 v2.9.7 用户向内容 + 新增修复条目，CHANGELOG.md 写真实技术改动
+  - SW 缓存名更新为 `datelife-v298a`
+  - 版本号统一：`client/package.json`、`server/package.json`、README 徽章 → `2.9.8-alpha`
+
 ---
 
 ## 用户/开发者双轨版本日志策略

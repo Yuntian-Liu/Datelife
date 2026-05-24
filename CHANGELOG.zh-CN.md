@@ -4,6 +4,14 @@
 
 ---
 
+## [2.9.8-alpha] - 2026-05-24
+
+### 修复
+
+- `FoodForm.vue` 扫码条形码时不显示「正在查询...」状态提示：`handleScanResult()` 先设置 `scanStatus.value = '正在查询...'` 再调用 `resetForm()`，后者立即清空了状态 — 修复为先调用 `resetForm()` 再设置状态
+
+---
+
 ## [2.9.7-alpha] - 2026-05-24
 
 ### 新增

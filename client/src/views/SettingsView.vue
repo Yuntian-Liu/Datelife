@@ -274,7 +274,7 @@ const agreementType = ref('agreement')
 const showAbout = ref(false)
 const showChangelog = ref(false)
 const showOpenSource = ref(false)
-const selectedChangelog = ref('v2.9.7-alpha')
+const selectedChangelog = ref('v2.9.8-alpha')
 const showVersionDropdown = ref(false)
 
 import { changelogData, getGroupedVersions } from '../utils/changelog.js'

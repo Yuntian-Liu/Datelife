@@ -166,8 +166,8 @@ async function handleScanResult(result) {
   if (!result) return
   const sq = { ...route.query }; delete sq.scanResult; router.replace({ query: sq })
   const decodedText = decodeURIComponent(result)
-  scanStatus.value = '正在查询...'
   resetForm()
+  scanStatus.value = '正在查询...'
 
   if (decodedText.includes('/f/') || decodedText.includes('/u/')) {
     const idMatch = decodedText.match(/\/f\/(\d+)/)

@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2.9.8-alpha] - 2026-05-24
+
+### Fixed
+
+- `FoodForm.vue` barcode scan status not displayed: `handleScanResult()` called `scanStatus.value = '正在查询...'` before `resetForm()`, which immediately cleared the status — fixed by swapping the call order so `resetForm()` runs first
+
+---
+
 ## [2.9.7-alpha] - 2026-05-24
 
 ### Added
