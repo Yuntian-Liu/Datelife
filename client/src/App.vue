@@ -104,7 +104,7 @@ watch(() => route.path, (to, from) => {
     <RouteLoading :visible="isRouteLoading" :show-message="showLoadingMessage" />
     <DesktopHeader v-if="showNav" @add="handleAdd" />
     <router-view v-slot="{ Component }">
-      <keep-alive>
+      <keep-alive :include="['HomeView', 'FoodsView', 'QRCodesView', 'ScanView', 'SettingsView']">
         <component :is="Component" />
       </keep-alive>
     </router-view>

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onActivated, inject, computed } from 'vue'
+import { ref, onMounted, onActivated, inject, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { foods, barcode } from '../utils/api'
 import { logger } from '../utils/logger'
@@ -39,6 +39,9 @@ const shelfLifeUnit = ref('天')
 const showUnitPicker = ref(false)
 const unitOptions = ['天', '周', '月']
 const pageTitle = computed(() => editing.value ? '编辑食品' : '添加食品')
+const showBarcodeInput = ref(false)
+const barcodeInput = ref('')
+const barcodeQuerying = ref(false)
 
 const availableTags = computed(() => allTags.value.filter(t => !formTags.value.includes(t)))
 
@@ -127,29 +130,66 @@ function goScan(mode) {
   router.push(`/scan?mode=${mode}`)
 }
 
-async function handleScanResult() {
-  const result = route.query.scanResult
+async function queryBarcode() {
+  const code = barcodeInput.value.trim()
+  if (!code) return
+  if (!/^\d{8,13}$/.test(code)) {
+    scanStatus.value = '条形码格式不正确，需 8-13 位数字'
+    setTimeout(() => { scanStatus.value = '' }, 3000)
+    return
+  }
+  barcodeQuerying.value = true
+  scanStatus.value = '正在查询...'
+  try {
+    const result = await barcode.lookup(code)
+    if (result.found) {
+      form.value.name = result.goods_name
+      scanStatus.value = ''
+      showBarcodeInput.value = false
+      barcodeInput.value = ''
+      logger.info('foods', '手动输入条码查询成功', { barcode: code, name: result.goods_name })
+    } else {
+      scanStatus.value = '未找到商品信息，请手动输入名称'
+      logger.warn('foods', '手动输入条码未找到', { barcode: code })
+      setTimeout(() => { scanStatus.value = '' }, 3000)
+    }
+  } catch (e) {
+    scanStatus.value = '查询失败：' + e.message
+    logger.error('foods', '手动输入条码查询失败', { barcode: code, error: e.message })
+    setTimeout(() => { scanStatus.value = '' }, 3000)
+  } finally {
+    barcodeQuerying.value = false
+  }
+}
+
+async function handleScanResult(result) {
   if (!result) return
   const sq = { ...route.query }; delete sq.scanResult; router.replace({ query: sq })
   const decodedText = decodeURIComponent(result)
   scanStatus.value = '正在查询...'
   resetForm()
 
-  if (decodedText.includes('/f/')) {
-    const match = decodedText.match(/\/f\/(\d+)/)
-    if (!match) {
+  if (decodedText.includes('/f/') || decodedText.includes('/u/')) {
+    const idMatch = decodedText.match(/\/f\/(\d+)/)
+    const uuidMatch = decodedText.match(/\/u\/([a-zA-Z0-9]+)/)
+
+    if (!idMatch && !uuidMatch) {
       logger.warn('foods', '扫码结果无效', { type: 'qrcode', decodedText })
       scanStatus.value = '无效的食品二维码'
       setTimeout(() => { scanStatus.value = '' }, 3000)
       return
     }
+
     try {
-      const food = await foods.getById(match[1])
+      const food = idMatch
+        ? await foods.getById(idMatch[1])
+        : await foods.getByUuid(uuidMatch[1])
       form.value.name = food.name
       scanStatus.value = ''
-      logger.info('foods', '扫码查询食品成功', { type: 'qrcode', foodId: match[1] })
+      logger.info('foods', '扫码查询食品成功', { type: idMatch ? 'qrcode-id' : 'qrcode-uuid', identifier: idMatch ? idMatch[1] : uuidMatch[1], name: food.name })
     } catch (e) {
-      logger.error('foods', '扫码查询食品失败', { type: 'qrcode', foodId: match[1], error: e.message })
+      const identifier = idMatch ? idMatch[1] : uuidMatch?.[1]
+      logger.error('foods', '扫码查询食品失败', { type: idMatch ? 'qrcode-id' : 'qrcode-uuid', identifier, error: e.message })
       scanStatus.value = '查询失败：' + e.message
       setTimeout(() => { scanStatus.value = '' }, 3000)
     }
@@ -174,6 +214,7 @@ async function handleScanResult() {
 }
 
 async function initForm() {
+  const pendingScanResult = route.query.scanResult || null
   resetForm()
   if (!isAuthenticated.value) { router.push('/foods'); return }
 
@@ -192,11 +233,10 @@ async function initForm() {
       errMsg.value = '加载食品失败'
     }
   } else {
-    resetForm()
     logger.info('foods', '打开添加食品表单')
   }
 
-  if (route.query.scanResult) handleScanResult()
+  if (pendingScanResult) handleScanResult(pendingScanResult)
   if (route.query.fromScan === '1') {
     const fq = { ...route.query }; delete fq.fromScan; router.replace({ query: fq })
   }
@@ -204,6 +244,7 @@ async function initForm() {
 
 onMounted(initForm)
 onActivated(initForm)
+watch(() => route.fullPath, () => initForm())
 </script>
 
 <template>
@@ -244,8 +285,11 @@ onActivated(initForm)
           <div class="relative">
             <label class="block text-xs text-gray-400 mb-1">食品名称</label>
             <input v-model="form.name" placeholder="输入食品名称" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-transparent" />
-            <button @click="startScan" type="button" class="absolute right-2 bottom-2 p-1 text-gray-400 hover:text-primary-600 transition" title="扫码识别">
+            <button @click="startScan" type="button" class="absolute right-9 bottom-2 p-1 text-gray-400 hover:text-primary-600 transition" title="扫码识别">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
+            </button>
+            <button @click="showBarcodeInput = true" type="button" class="absolute right-2 bottom-2 p-1 text-gray-400 hover:text-primary-600 transition" title="手动输入条形码">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
             </button>
           </div>
 
@@ -336,6 +380,26 @@ onActivated(initForm)
             中清理不需要的标签
           </p>
           <button @click="showTagLimitModal = false" class="bg-primary-500 hover:bg-primary-600 text-white px-6 py-2 rounded-xl text-sm font-medium transition">我知道了</button>
+        </div>
+      </div>
+
+      <!-- 手动输入条形码弹窗 -->
+      <div v-if="showBarcodeInput" class="fixed inset-0 z-[100] bg-black/30 flex items-center justify-center p-6" @click.self="showBarcodeInput = false">
+        <div class="bg-white rounded-2xl shadow-lg p-6 max-w-sm w-full">
+          <div class="text-lg font-medium text-gray-800 mb-3">手动输入条形码</div>
+          <input v-model="barcodeInput" type="text" inputmode="numeric"
+            placeholder="输入 8-13 位条形码编号"
+            maxlength="13"
+            @keydown.enter.prevent="queryBarcode"
+            class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-transparent mb-3"
+            :disabled="barcodeQuerying" />
+          <p class="text-xs text-gray-400 mb-4">输入商品包装上的条形码数字，自动查询名称</p>
+          <div class="flex gap-2">
+            <button @click="showBarcodeInput = false; barcodeInput = ''" class="flex-1 border border-gray-200 text-gray-600 py-2 rounded-xl text-sm font-medium transition hover:bg-gray-50">取消</button>
+            <button @click="queryBarcode" class="flex-1 bg-primary-500 hover:bg-primary-600 text-white py-2 rounded-xl text-sm font-medium transition active:scale-[0.98]" :disabled="barcodeQuerying || !barcodeInput.trim()">
+              {{ barcodeQuerying ? '查询中...' : '查询' }}
+            </button>
+          </div>
         </div>
       </div>
     </teleport>

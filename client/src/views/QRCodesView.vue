@@ -1,4 +1,5 @@
 <script setup>
+defineOptions({ name: 'QRCodesView' })
 import { ref, onMounted, onActivated, inject, computed } from 'vue'
 import { jsPDF } from 'jspdf'
 import { foods } from '../utils/api'
@@ -9,7 +10,10 @@ const foodList = ref([])
 const loading = ref(true)
 const downloadingPDF = ref(false)
 
+let qrInitLock = false
 async function loadQRCodes() {
+  if (qrInitLock) return
+  qrInitLock = true
   if (isAuthenticated.value) {
     try {
       foodList.value = await foods.getAll()
@@ -19,6 +23,7 @@ async function loadQRCodes() {
     }
   }
   loading.value = false
+  qrInitLock = false
 }
 
 onMounted(loadQRCodes)

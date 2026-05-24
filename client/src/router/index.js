@@ -8,6 +8,7 @@ const routes = [
   { path: '/qrcodes', component: () => import('../views/QRCodesView.vue') },
   { path: '/scan', component: () => import('../views/ScanView.vue') },
   { path: '/f/:id', component: () => import('../views/FoodDetail.vue') },
+  { path: '/u/:uuid', component: () => import('../views/FoodDetail.vue') },
   { path: '/settings', component: () => import('../views/SettingsView.vue') },
   { path: '/settings/edit', component: () => import('../views/EditProfile.vue') },
   { path: '/tags', component: () => import('../views/TagManageView.vue') },

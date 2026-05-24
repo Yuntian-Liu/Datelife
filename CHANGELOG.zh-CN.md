@@ -4,6 +4,31 @@
 
 ---
 
+## [2.9.7-alpha] - 2026-05-24
+
+### 新增
+
+- 手动输入条形码：扫码困难时可手动输入 8-13 位条形码编号，通过 apibyte.cn API 自动查询商品名称
+- UUID 跨账号迁移：二维码改用 8 位唯一短 ID 编码（`/u/{uuid}`），替代数据库自增 ID（`/f/:id}`），导入到新账号后二维码依然有效，旧格式自动兼容
+- 新增 `GET /api/foods/by-uuid/:uuid` 公开端点（无需登录，与已有 `/f/:id` 行为一致）
+
+### 修复
+
+- `FoodForm.vue` 扫码回调静默丢失：`route.query.scanResult` 在 `await` 之后读取，因 Vue Router query 竞态条件导致值已丢失 — 修复为在 `initForm()` 顶部同步捕获 `pendingScanResult` 并直接传给 `handleScanResult(result)`
+- `FoodForm.vue` 页面卡死崩溃：第 247 行使用了 `watch` 但未从 Vue 导入，导致整个组件 setup 阶段 ReferenceError 崩溃
+- `LoginView.vue` 倒计时定时器泄漏：组件销毁时未清理 `setInterval`，现已通过 `onBeforeUnmount(clearInterval(timer))` 正确清理
+
+### 变更
+
+- `<keep-alive>` 缓存策略从无条件缓存所有路由改为显式白名单（5 个组件：`HomeView`、`FoodsView`、`QRCodesView`、`ScanView`、`SettingsView`），排除 `FoodForm`、`LoginView`、`FoodDetail`
+- 所有 5 个缓存页面统一添加 `defineOptions({ name })` 用于 keep-alive 匹配 + `initLock` 模式防止 `onMounted` + `onActivated` 双重触发
+- 扫码超时提示改为每个扫码会话仅提醒一次（通过 `timeoutReminded` 标志位），且按模式显示不同文案（条形码模式提示可手动输入，二维码模式提示继续尝试）
+- SettingsView 返回时通过 `onActivated(refreshFoodCount)` 刷新食品数量
+- FoodDetail 支持双模式加载：通过路由路径前缀区分 `/u/:uuid` 和 `/f/:id`，并 watch 两个参数变化
+- SW 缓存名更新为 `datelife-v297a`
+
+---
+
 ## [2.9.6-alpha] - 2026-05-23
 
 ### 修复

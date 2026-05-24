@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2.9.7-alpha] - 2026-05-24
+
+### Added
+
+- Manual barcode input: users can type 8-13 digit barcode numbers when scanning is difficult, with automatic product name lookup via apibyte.cn API
+- UUID-based cross-account migration: QR codes now encode a unique 8-char short ID (`/u/{uuid}`) instead of database auto-increment ID (`/f/:id}`), surviving import/export to different accounts while maintaining backward compatibility with old QR format
+- `GET /api/foods/by-uuid/:uuid` public endpoint for UUID-based food lookup (no auth required, matching existing `/f/:id` behavior)
+
+### Fixed
+
+- `FoodForm.vue` scan callback silently dropped: `route.query.scanResult` was captured after `await` calls, losing the value due to Vue Router query race condition — fixed by capturing `pendingScanResult` synchronously at the top of `initForm()` and passing it directly to `handleScanResult(result)`
+- `FoodForm.vue` ReferenceError crash on mount: `watch` was used at line 247 but not imported from Vue, causing entire component setup to fail and freezing the page
+- `LoginView.vue` countdown timer leak: `setInterval` was never cleared on component unmount, now properly cleaned up via `onBeforeUnmount(clearInterval(timer))`
+
+### Changed
+
+- `<keep-alive>` whitelist narrowed from caching all routes to explicit 5-component include list (`HomeView`, `FoodsView`, `QRCodesView`, `ScanView`, `SettingsView`), excluding `FoodForm`, `LoginView`, `FoodDetail`
+- All 5 cached views now have `defineOptions({ name })` for keep-alive matching and `initLock` pattern to prevent `onMounted` + `onActivated` double-fire
+- Scan timeout hint now fires once per scan session (via `timeoutReminded` flag) with mode-specific messaging (barcode suggests manual input, qrcode suggests continuing)
+- SettingsView food count refreshes on page return via `onActivated(refreshFoodCount)`
+- FoodDetail supports dual-mode loading by route path prefix (`/u/:uuid` vs `/f/:id`) with `watch` on both params
+- SW cache name updated to `datelife-v297a`
+
+---
+
 ## [2.9.6-alpha] - 2026-05-23
 
 ### Fixed

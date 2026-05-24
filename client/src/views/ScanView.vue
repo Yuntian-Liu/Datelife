@@ -1,4 +1,5 @@
 <script setup>
+defineOptions({ name: 'ScanView' })
 import { ref, onMounted, onBeforeUnmount, onActivated, onDeactivated, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode'
@@ -19,6 +20,7 @@ let initLock = false
 async function initScan() {
   if (initLock) return
   initLock = true
+  timeoutReminded = false
   currentMode.value = route.query.mode === 'qrcode' ? 'qrcode' : 'barcode'
   const mode = currentMode.value
   error.value = ''
@@ -95,9 +97,13 @@ async function stopScanner() {
   }
 }
 
+let timeoutReminded = false
+
 function startTimeoutTimer() {
   clearTimeout(scanTimer)
+  if (timeoutReminded) return
   scanTimer = setTimeout(() => {
+    timeoutReminded = true
     logger.warn('scan', '扫码超时提醒触发', { mode: currentMode.value })
     showTimeoutHint.value = true
   }, 10000)
@@ -105,7 +111,6 @@ function startTimeoutTimer() {
 
 function onTimeoutRetry() {
   showTimeoutHint.value = false
-  startTimeoutTimer()
 }
 
 function onTimeoutGoBack() {
@@ -143,10 +148,10 @@ function goBack() {
       <div v-if="showTimeoutHint" class="absolute inset-0 flex items-center justify-center z-20">
         <div class="bg-black/70 border border-white/10 rounded-2xl px-5 py-5 text-center mx-6 max-w-xs w-full">
           <div class="text-2xl mb-2">🥺</div>
-          <p class="text-white/50 text-xs mb-5">扫了好一会儿了，要不先歇歇？</p>
+          <p class="text-white/50 text-xs mb-5">{{ currentMode === 'barcode' ? '扫了好一会儿了，也可以手动输入条形码哦' : '扫了好一会儿了，要继续试试吗？' }}</p>
           <div class="flex gap-3">
-            <button @click="onTimeoutRetry" class="flex-1 border border-white/20 hover:border-white/40 text-white/70 hover:text-white px-3 py-2.5 rounded-xl text-sm transition">再试试看</button>
-            <button @click="onTimeoutGoBack" class="flex-1 bg-white hover:bg-white/90 text-gray-800 px-3 py-2.5 rounded-xl text-sm font-medium transition active:scale-95">不扫啦<br>回去手动填～</button>
+            <button @click="onTimeoutRetry" class="flex-1 border border-white/20 hover:border-white/40 text-white/70 hover:text-white px-3 py-2.5 rounded-xl text-sm transition">继续扫码</button>
+            <button @click="onTimeoutGoBack" class="flex-1 bg-white hover:bg-white/90 text-gray-800 px-3 py-2.5 rounded-xl text-sm font-medium transition active:scale-95">去手动输入</button>
           </div>
         </div>
       </div>

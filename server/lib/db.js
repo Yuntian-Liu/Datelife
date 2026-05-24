@@ -109,6 +109,26 @@ function initTables() {
     // 列已存在，忽略错误
   }
 
+  // 给 foods 表添加 uuid 列（如果不存在）— 跨设备/账号迁移的唯一标识
+  try {
+    db.prepare("ALTER TABLE foods ADD COLUMN uuid TEXT").run()
+  } catch (e) {
+    // 列已存在，忽略错误
+  }
+  try {
+    db.prepare('CREATE UNIQUE INDEX IF NOT EXISTS idx_foods_uuid ON foods(uuid)').run()
+  } catch (e) {}
+
+  // 回填已有数据的 uuid（仅 uuid 为空的行）
+  const emptyUuid = db.prepare("SELECT id FROM foods WHERE uuid IS NULL OR uuid = ''").all()
+  if (emptyUuid.length > 0) {
+    const updateUuid = db.prepare('UPDATE foods SET uuid = ? WHERE id = ?')
+    for (const row of emptyUuid) {
+      updateUuid.run(generateShortId(), row.id)
+    }
+    console.log(`[DB] 回填 ${emptyUuid.length} 条食品的 uuid`)
+  }
+
   // 首次启动：从 foods 迁移已有标签到 tags 表
   const tagCount = db.prepare('SELECT COUNT(*) AS c FROM tags').get()
   if (tagCount.c === 0) {
@@ -139,4 +159,16 @@ function getNextUid() {
   return row.next_uid
 }
 
-module.exports = { getDb, getNextUid }
+// 8 位短唯一 ID，排除易混淆字符 o/0/l/1
+const SHORT_ID_CHARS = 'abcdefghijkmnpqrstuvwxyz23456789'
+function generateShortId() {
+  const crypto = require('crypto')
+  const bytes = crypto.randomBytes(8)
+  let id = ''
+  for (let i = 0; i < 8; i++) {
+    id += SHORT_ID_CHARS[bytes[i] % SHORT_ID_CHARS.length]
+  }
+  return id
+}
+
+module.exports = { getDb, getNextUid, generateShortId }

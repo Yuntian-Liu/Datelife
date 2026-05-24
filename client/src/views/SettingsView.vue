@@ -1,5 +1,6 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+defineOptions({ name: 'SettingsView' })
+import { ref, computed, onMounted, onActivated } from 'vue'
 import { useRouter } from 'vue-router'
 import { foods, auth } from '../utils/api'
 import { useAuth } from '../composables/useAuth'
@@ -32,11 +33,11 @@ async function exportData() {
   const tagCount = [...new Set(list.flatMap(f => { try { return JSON.parse(f.tags || '[]') } catch { return [] } }))].length
   logger.info('export', `导出 ${list.length} 条食品`, { tagCount })
   const data = {
-    version: '1.0',
+    version: '2.0',
     exportDate: new Date().toISOString(),
     app: 'Datelife',
-    foods: list.map(({ name, barcode, produce_date, shelf_life_days, expire_date, category, tags }) => ({
-      name, barcode, produce_date, shelf_life_days, expire_date, category, tags
+    foods: list.map(({ uuid, name, barcode, produce_date, shelf_life_days, shelf_life_unit, quantity, category, tags }) => ({
+      uuid, name, barcode, produce_date, shelf_life_days, shelf_life_unit, quantity, category, tags
     }))
   }
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
@@ -152,6 +153,7 @@ async function executeImport(foodsToImport) {
   const existing = await foods.getAll()
   logger.info('import', `当前已有 ${existing.length} 条食品，进行去重检查`)
   const existingKeys = new Set(existing.map(f => f.name + '|' + f.produce_date))
+  const existingUuids = new Set(existing.map(f => f.uuid).filter(Boolean))
 
   let success = 0, fail = 0, skipped = 0
   for (const item of foodsToImport) {
@@ -159,19 +161,29 @@ async function executeImport(foodsToImport) {
       logger.warn('import', '跳过无效条目', item)
       fail++; continue
     }
+
+    if (item.uuid && existingUuids.has(item.uuid)) {
+      logger.info('import', '跳过已存在的 uuid', { uuid: item.uuid, name: item.name })
+      skipped++; continue
+    }
+
     const key = item.name + '|' + item.produce_date
     if (existingKeys.has(key)) { skipped++; continue }
     try {
       await foods.create({
+        uuid: item.uuid || undefined,
         name: item.name,
         barcode: item.barcode || null,
         produce_date: item.produce_date,
         shelf_life_days: item.shelf_life_days,
+        shelf_life_unit: item.shelf_life_unit || '天',
+        quantity: item.quantity || 1,
         category: item.category || null,
         tags: item.tags || '[]'
       })
       success++
       existingKeys.add(key)
+      if (item.uuid) existingUuids.add(item.uuid)
     } catch (e) {
       logger.error('import', `创建食品失败: ${item.name}`, e.message)
       fail++
@@ -262,7 +274,7 @@ const agreementType = ref('agreement')
 const showAbout = ref(false)
 const showChangelog = ref(false)
 const showOpenSource = ref(false)
-const selectedChangelog = ref('v2.9.6-alpha')
+const selectedChangelog = ref('v2.9.7-alpha')
 const showVersionDropdown = ref(false)
 
 import { changelogData, getGroupedVersions } from '../utils/changelog.js'
@@ -318,17 +330,18 @@ async function mockLogin() {
   }
 }
 
-onMounted(async () => {
-  if (isAuthenticated.value) {
-    try {
-      const list = await foods.getAll()
-      foodCount.value = list.length
-    } catch (e) {
-      logger.error('settings', '设置页加载食品数量失败', { error: e.message })
-      foodCount.value = 0
-    }
+async function refreshFoodCount() {
+  if (!isAuthenticated.value) return
+  try {
+    const list = await foods.getAll()
+    foodCount.value = list.length
+  } catch (e) {
+    logger.error('settings', '设置页加载食品数量失败', { error: e.message })
   }
-})
+}
+
+onMounted(refreshFoodCount)
+onActivated(refreshFoodCount)
 </script>
 
 <template>

@@ -1,4 +1,5 @@
 <script setup>
+defineOptions({ name: 'HomeView' })
 import { ref, onMounted, onActivated, inject, computed } from 'vue'
 import { foods } from '../utils/api'
 import { getBadge } from '../utils/badges'

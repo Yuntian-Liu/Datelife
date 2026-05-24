@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, nextTick, onMounted } from 'vue'
+import { ref, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { auth } from '../utils/api'
 import { useAuth } from '../composables/useAuth'
@@ -18,6 +18,7 @@ const mode = ref(route.query.mode === 'password' ? 'password' : 'code')
 onMounted(() => {
   if (route.query.mode === 'password') mode.value = 'password'
 })
+onBeforeUnmount(() => clearInterval(timer))
 const step = ref(1)
 const email = ref('')
 const code = ref(['', '', '', '', '', ''])

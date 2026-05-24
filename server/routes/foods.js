@@ -1,6 +1,6 @@
 const { Router } = require('express')
 const QRCode = require('qrcode')
-const { getDb } = require('../lib/db')
+const { getDb, generateShortId } = require('../lib/db')
 const { authRequired } = require('../middleware/auth')
 
 const router = Router()
@@ -98,19 +98,32 @@ router.get('/:id', (req, res) => {
   res.json(result)
 })
 
+// 通过 uuid 获取食品（公开，用于跨账号二维码扫描）
+router.get('/by-uuid/:uuid', (req, res) => {
+  const db = getDb()
+  const food = db.prepare('SELECT * FROM foods WHERE uuid = ?').get(req.params.uuid)
+  if (!food) return res.status(404).json({ error: '食品不存在' })
+
+  const result = attachStatus(food)
+  result.is_owner = req.user ? food.user_id === req.user.uid : false
+  res.json(result)
+})
+
 // 新增食品（需要登录）
 router.post('/', authRequired, (req, res) => {
-  const { name, barcode, produce_date, shelf_life_days, shelf_life_unit, category, tags, quantity } = req.body
+  const { name, barcode, produce_date, shelf_life_days, shelf_life_unit, category, tags, quantity, uuid: requestedUuid } = req.body
   if (!name || !produce_date || !shelf_life_days) {
     return res.status(400).json({ error: '名称、生产日期、保质期天数必填' })
   }
 
   const expire_date = calcExpireDate(produce_date, shelf_life_days)
   const db = getDb()
+  const uuid = requestedUuid || generateShortId()
+
   const result = db.prepare(`
-    INSERT INTO foods (user_id, name, barcode, produce_date, shelf_life_days, shelf_life_unit, expire_date, category, tags, quantity)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(req.user.uid, name, barcode || null, produce_date, shelf_life_days, shelf_life_unit || '天', expire_date, category || null, tags || '[]', quantity || 1)
+    INSERT INTO foods (user_id, name, barcode, produce_date, shelf_life_days, shelf_life_unit, expire_date, category, tags, quantity, uuid)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(req.user.uid, name, barcode || null, produce_date, shelf_life_days, shelf_life_unit || '天', expire_date, category || null, tags || '[]', quantity || 1, uuid)
 
   syncTags(db, req.user.uid, tags || '[]')
 
@@ -217,7 +230,7 @@ router.get('/:id/qrcode', (req, res) => {
   const food = db.prepare('SELECT * FROM foods WHERE id = ?').get(req.params.id)
   if (!food) return res.status(404).json({ error: '食品不存在' })
   const baseUrl = process.env.BASE_URL || 'http://localhost:5173'
-  const url = `${baseUrl}/f/${food.id}`
+  const url = `${baseUrl}/u/${food.uuid}`
   const { status } = getStatus(food.expire_date)
   const darkColor = QR_COLORS[status] || QR_COLORS.normal
   QRCode.toBuffer(url, { width: 256, margin: 2, color: { dark: darkColor, light: '#ffffff' } }, (err, buffer) => {

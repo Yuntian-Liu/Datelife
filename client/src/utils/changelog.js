@@ -1,4 +1,5 @@
 export const changelogVersions = [
+  { version: 'v2.9.7-alpha', date: '2026-05-24', group: '2.9.x' },
   { version: 'v2.9.6-alpha', date: '2026-05-23', group: '2.9.x' },
   { version: 'v2.9.5-alpha', date: '2026-05-23', group: '2.9.x' },
   { version: 'v2.9.4-alpha', date: '2026-05-23', group: '2.9.x' },
@@ -33,6 +34,36 @@ export const changelogVersions = [
 ]
 
 export const changelogData = {
+  'v2.9.7-alpha': {
+    date: '2026-05-24',
+    sections: [
+      {
+        type: '新增',
+        color: 'green',
+        items: [
+          '手动输入条形码：扫码困难时可手动输入 8-13 位条形码编号，自动查询商品名称',
+          'UUID 跨账号迁移：二维码改用唯一短 ID 编码，导入到新账号后二维码依然有效（旧格式自动兼容）'
+        ]
+      },
+      {
+        type: '优化',
+        color: 'blue',
+        items: [
+          'keep-alive 全面加固：5 个缓存页面统一添加 initLock 防重入 + defineOptions 名称注册',
+          '扫码超时弹窗优化：每个扫码会话仅提醒一次，条形码/二维码模式显示不同提示文案'
+        ]
+      },
+      {
+        type: '修复',
+        color: 'red',
+        items: [
+          '修复扫码后食品名称不填充的问题（route.query 在异步操作中丢失导致）',
+          '修复 FoodForm 页面卡死崩溃（watch 未导入导致的 ReferenceError）',
+          '修复 LoginView 倒计时定时器组件销毁后未清理的泄漏问题'
+        ]
+      }
+    ]
+  },
   'v2.9.6-alpha': {
     date: '2026-05-23',
     sections: [

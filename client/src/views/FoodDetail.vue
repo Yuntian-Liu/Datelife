@@ -19,12 +19,15 @@ async function loadFood() {
   error.value = ''
   food.value = null
   try {
-    const data = await foods.getById(route.params.id)
+    const isUuid = route.path.startsWith('/u/')
+    const param = isUuid ? route.params.uuid : route.params.id
+    const data = isUuid ? await foods.getByUuid(param) : await foods.getById(param)
     food.value = data
-    logger.info('detail', '查看食品详情（只读模式，从食品列表管理）', { id: data.id, name: data.name, isOwner: isOwner.value })
+    logger.info('detail', '查看食品详情', { id: data.id, uuid: data.uuid, name: data.name, isOwner: isOwner.value, viaUuid: isUuid })
     qrKey.value = Date.now()
   } catch (e) {
-    logger.error('detail', '加载食品失败', { id: route.params.id, error: e.message })
+    const param = route.params.uuid || route.params.id
+    logger.error('detail', '加载食品失败', { param, error: e.message })
     error.value = e.message || '加载失败'
   } finally {
     loading.value = false
@@ -32,7 +35,9 @@ async function loadFood() {
 }
 
 onMounted(loadFood)
-watch(() => route.params.id, (id) => { if (id) loadFood() })
+watch(() => [route.params.id, route.params.uuid], ([id, uuid]) => {
+  if (id || uuid) loadFood()
+})
 
 function statusLabel(f) {
   if (f.status === 'expired') return '已过期'

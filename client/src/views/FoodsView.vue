@@ -1,4 +1,5 @@
 <script setup>
+defineOptions({ name: 'FoodsView' })
 import { ref, onMounted, onActivated, inject, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { foods } from '../utils/api'
@@ -127,12 +128,16 @@ const filteredList = computed(() => {
   return list
 })
 
+let foodsInitLock = false
 async function loadFoods() {
+  if (foodsInitLock) return
+  foodsInitLock = true
   if (isAuthenticated.value) {
     try { foodList.value = await foods.getAll() } catch (e) { logger.error('foods', '食品列表加载失败', { error: e.message }) }
     try { allTags.value = await foods.getTags() } catch (e) { logger.warn('tags', '加载已有标签列表失败', { error: e.message }) }
   }
   loading.value = false
+  foodsInitLock = false
 }
 
 onMounted(loadFoods)

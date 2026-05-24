@@ -700,6 +700,8 @@ cd client && npm run dev
   - SW 缓存名更新为 `datelife-v293a`
   - 版本号统一：`client/package.json`、`server/package.json`、README 徽章 → `2.9.3-alpha`
 
+### 2026-05-23
+
 - **v2.9.4-alpha 发布**：ScanView keep-alive 修复
   - 修复 `ScanView.vue` keep-alive 缓存导致扫码黑屏/模式错乱：
     - 离开扫码页时 `onDeactivated` 停摄像头、清扫描器实例
@@ -724,6 +726,29 @@ cd client && npm run dev
   - 修复方式：`{ mode }` → `{ mode: currentMode.value }`
   - SW 缓存名更新为 `datelife-v296a`
   - 版本号统一：`client/package.json`、`server/package.json`、README 徽章 → `2.9.6-alpha`
+
+### 2026-05-24
+
+- **v2.9.7-alpha 发布**：扫码链路修复 + UUID 迁移 + 手动条形码 + keep-alive 全面加固
+  - **根因分析 — 扫码无响应**：`FoodForm.vue` 的 `initForm()` 中 `route.query.scanResult` 在多个 `await` 之后读取，Vue Router 在异步间隙中已将 query 清空（因为扫码页 `router.push` 带了 query 参数，组件挂载后 Router 内部会做清理），导致 `pendingScanResult` 为 null，`handleScanResult()` 从不执行
+    - 修复：在 `initForm()` 第一行同步捕获 `const pendingScanResult = route.query.scanResult || null`，传参给 `handleScanResult(result)` 而非让函数内部再读 `route.query`
+  - **根因分析 — 页面卡死**：添加 `watch(() => route.fullPath, () => initForm())` 处理 add/edit 同组件复用后，忘记在 import 语句中加入 `watch`，导致 setup 阶段 ReferenceError → 整个组件崩溃
+  - **UUID 跨账号迁移系统**：
+    - 问题：旧二维码编码数据库自增 ID (`/f/123`)，导入新账号后 ID 对应不同食品
+    - 方案：每个食品生成 8 位短唯一 ID（字符集排除 o/0/l/1），QR 码改编 `/u/{uuid}`
+    - 服务端：`db.js` 新增 `uuid` 列 + 唯一索引 + 启动时回填空值；`foods.js` POST 接受可选 `uuid` 字段；新增 `GET /by-uuid/:url` 公开端点
+    - 前端：`FoodDetail.vue` 按路径前缀判断加载模式；`api.js` 新增 `getByUuid()` 方法；路由新增 `/u/:uuid`
+    - 向后兼容：`handleScanResult()` 同时匹配 `/f/:id` 和 `/u/:uuid` 两种格式
+  - **手动输入条形码**：`FoodForm.vue` 名称输入框旁新增铅笔图标按钮 → 弹窗输入 8-13 位条形码 → 调用已有 `barcode.lookup()` API → 自动填充名称
+  - **keep-alive 全面加固**：
+    - `App.vue` 白名单从无条件缓存改为显式 include 5 组件（排除 FoodForm/LoginView/FoodDetail）
+    - 5 个缓存页面统一加 `defineOptions({ name })` + `initLock` 防重入模式
+    - `SettingsView.vue` 新增 `onActivated(refreshFoodCount)` 解决返回时食品数量过期
+    - `LoginView.vue` 新增 `onBeforeUnmount(clearInterval(timer))` 修复定时器泄漏
+  - **超时弹窗优化**：`timeoutReminded` 标志位控制仅提醒一次；文案按 currentMode 区分（条形码→提示手动输入，二维码→提示继续）
+  - SW 缓存名更新为 `datelife-v297a`
+  - 版本号统一：`client/package.json`、`server/package.json`、README 徽章 → `2.9.7-alpha`
+  - **停止双轨策略**：用户确认旧版本已覆盖完毕，changelog.js 只写本次真实改动
 
 ---
 
