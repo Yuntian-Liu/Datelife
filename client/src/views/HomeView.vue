@@ -147,7 +147,7 @@ function avatarUrl(seed) {
                   </router-link>
                 </div>
                 <div v-if="expiringSoon.length" class="space-y-2 flex-1">
-                  <router-link v-for="food in expiringSoon" :key="food.id" :to="`/f/${food.id}`"
+                  <router-link v-for="food in expiringSoon" :key="food.id" :to="`/food/${food.id}`"
                     class="flex items-center justify-between py-2 px-3 bg-yellow-50 rounded-xl hover:bg-yellow-100 transition">
                     <span class="text-sm font-medium text-gray-700 truncate max-w-[70%]">{{ food.name }}</span>
                     <span class="text-xs text-yellow-600 font-medium shrink-0 ml-2">{{ daysLabel(food.days_left) }}</span>
@@ -170,7 +170,7 @@ function avatarUrl(seed) {
                   </router-link>
                 </div>
                 <div v-if="expiredList.length" class="space-y-2 flex-1">
-                  <router-link v-for="food in expiredList" :key="food.id" :to="`/f/${food.id}`"
+                  <router-link v-for="food in expiredList" :key="food.id" :to="`/food/${food.id}`"
                     class="flex items-center justify-between py-2 px-3 bg-red-50 rounded-xl hover:bg-red-100 transition">
                     <span class="text-sm font-medium text-gray-700 truncate max-w-[70%]">{{ food.name }}</span>
                     <span class="text-xs text-red-600 font-medium shrink-0 ml-2">{{ daysLabel(food.days_left) }}</span>

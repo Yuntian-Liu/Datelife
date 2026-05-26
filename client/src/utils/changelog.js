@@ -1,4 +1,5 @@
 export const changelogVersions = [
+  { version: 'v2.9.9-alpha', date: '2026-05-26', group: '2.9.x' },
   { version: 'v2.9.8-alpha', date: '2026-05-24', group: '2.9.x' },
   { version: 'v2.9.7-alpha', date: '2026-05-24', group: '2.9.x' },
   { version: 'v2.9.6-alpha', date: '2026-05-23', group: '2.9.x' },
@@ -35,6 +36,33 @@ export const changelogVersions = [
 ]
 
 export const changelogData = {
+  'v2.9.9-alpha': {
+    date: '2026-05-26',
+    sections: [
+      {
+        type: '新增',
+        color: 'green',
+        items: [
+          '食品软删除：删除或消费后数据保留，已印出的二维码持续有效',
+          '公开详情页：扫码查看食品信息，无需登录',
+          '内部详情路由 /food/:id：与公开路由分离',
+          '扫码识别已删除食品：自动预填名称和保质期',
+          '协议更新提醒弹窗',
+          '服务端与客户端统一 UTC+8 时区计算'
+        ]
+      },
+      {
+        type: '优化',
+        color: 'blue',
+        items: [
+          '删除和吃掉操作改为软删除（不再物理移除数据）',
+          '食品列表自动过滤已删除项',
+          '内部链接统一改为 /food/:id',
+          '用户协议与隐私政策更新'
+        ]
+      }
+    ]
+  },
   'v2.9.8-alpha': {
     date: '2026-05-24',
     sections: [

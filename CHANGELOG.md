@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2.9.9-alpha] - 2026-05-26
+
+### Added
+
+- Food soft delete: `consumed_at` column replaces hard delete, QR codes remain functional after deletion
+- Public food detail page (`PublicFoodView.vue`): unified view for QR code scanning, works for both logged-in and anonymous users
+- Internal detail route `/food/:id`: separated from public routes `/f/:id` and `/u/:uuid`
+- `FoodForm.vue` scan recognition for consumed foods: auto-fills name and shelf life when scanning a deleted food's QR code
+- Agreement update notification modal: shown after version update modal, tracked via localStorage
+- Server and client unified UTC+8 timezone for all date calculations
+
+### Changed
+
+- `DELETE /:id` and `POST /:id/consume` now use soft delete (UPDATE consumed_at) instead of hard delete
+- `GET /` food list filters out consumed items with `WHERE consumed_at IS NULL`
+- Internal links in `FoodsView.vue` and `HomeView.vue` changed from `/f/:id` to `/food/:id`
+- User agreement and privacy policy updated with soft delete and UTC+8 disclosures
+- Agreement and privacy policy last updated date: 2026-05-26
+
+---
+
 ## [2.9.8-alpha] - 2026-05-24
 
 ### Fixed

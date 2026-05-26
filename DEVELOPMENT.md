@@ -756,6 +756,19 @@ cd client && npm run dev
   - SW 缓存名更新为 `datelife-v298a`
   - 版本号统一：`client/package.json`、`server/package.json`、README 徽章 → `2.9.8-alpha`
 
+### 2026-05-26
+
+- **v2.9.9-alpha 发布**：食品软删除 + 公开详情页 + UTC+8 时区
+  - 新增 `consumed_at` 列（软删除标记），替代硬删除，UUID 永久保留
+  - 新建 `PublicFoodView.vue` 公开详情页，面向所有人扫码查看
+  - 路由分离：`/f/:id` + `/u/:uuid` → 公开页，`/food/:id` → 内部详情页
+  - `FoodForm.vue` 扫码识别已删除食品，自动预填名称和保质期
+  - 服务端与客户端统一 UTC+8 时区计算
+  - 协议更新提醒弹窗（优先级低于版本更新弹窗）
+  - 用户协议与隐私政策更新（软删除、UTC+8 说明）
+  - SW 缓存名更新为 `datelife-v299a`
+  - 版本号统一：`client/package.json`、`server/package.json`、README 徽章 → `2.9.9-alpha`
+
 ---
 
 ## 用户/开发者双轨版本日志策略

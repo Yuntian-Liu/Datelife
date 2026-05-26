@@ -119,6 +119,13 @@ function initTables() {
     db.prepare('CREATE UNIQUE INDEX IF NOT EXISTS idx_foods_uuid ON foods(uuid)').run()
   } catch (e) {}
 
+  // 给 foods 表添加 consumed_at 列（软删除标记，NULL = 在库，非空 = 已移除）
+  try {
+    db.prepare('ALTER TABLE foods ADD COLUMN consumed_at TEXT DEFAULT NULL').run()
+  } catch (e) {
+    // 列已存在，忽略错误
+  }
+
   // 回填已有数据的 uuid（仅 uuid 为空的行）
   const emptyUuid = db.prepare("SELECT id FROM foods WHERE uuid IS NULL OR uuid = ''").all()
   if (emptyUuid.length > 0) {

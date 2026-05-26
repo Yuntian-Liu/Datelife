@@ -4,6 +4,27 @@
 
 ---
 
+## [2.9.9-alpha] - 2026-05-26
+
+### 新增
+
+- 食品软删除：consumed_at 列替代硬删除，扫码永不失效
+- 公开详情页 PublicFoodView：未登录/已登录扫码统一展示
+- 内部详情路由 /food/:id：与公开路由 /f/:id、/u/:uuid 分离
+- FoodForm 扫码识别已删除食品：自动预填名称和保质期
+- 协议更新提醒弹窗：优先级低于版本更新弹窗，通过 localStorage 追踪
+- 服务端与客户端统一 UTC+8 时区计算
+
+### 变更
+
+- DELETE 和 CONSUME 改为 UPDATE 设置 consumed_at（软删除）
+- 列表查询过滤 consumed_at IS NULL，已删除项不出现
+- FoodsView 和 HomeView 内部链接从 /f/:id 改为 /food/:id
+- 用户协议与隐私政策更新（软删除、UTC+8 说明）
+- 协议与隐私政策最后更新日期：2026 年 5 月 26 日
+
+---
+
 ## [2.9.8-alpha] - 2026-05-24
 
 ### 修复

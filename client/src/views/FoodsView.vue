@@ -309,7 +309,7 @@ function syncFiltersToQuery() {
           </thead>
           <tbody>
             <tr v-for="food in filteredList" :key="food.id" class="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition group">
-              <td class="px-5 py-3.5"><router-link :to="`/f/${food.id}`" class="font-medium text-gray-800 hover:text-primary-600 transition">{{ food.name }}</router-link></td>
+              <td class="px-5 py-3.5"><router-link :to="`/food/${food.id}`" class="font-medium text-gray-800 hover:text-primary-600 transition">{{ food.name }}</router-link></td>
               <td class="px-5 py-3.5">
                 <div class="flex items-center gap-1 flex-wrap">
                   <template v-if="food.tags">
@@ -354,7 +354,7 @@ function syncFiltersToQuery() {
         <div v-for="food in filteredList" :key="food.id"
           class="bg-white rounded-2xl shadow-md border border-gray-100/80 border-l-4 p-4"
           :class="statusBorder(food)">
-          <router-link :to="`/f/${food.id}`" class="block active:opacity-70 transition">
+          <router-link :to="`/food/${food.id}`" class="block active:opacity-70 transition">
             <div class="flex items-center justify-between">
               <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2">

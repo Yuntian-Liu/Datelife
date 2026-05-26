@@ -10,6 +10,8 @@ import Watermark from './components/Watermark.vue'
 import RouteLoading from './components/RouteLoading.vue'
 
 const UPDATE_KEY = 'datelife_last_seen_version'
+const AGREEMENT_KEY = 'datelife_last_seen_agreement'
+const AGREEMENT_VERSION = '2026-05-26'
 
 const route = useRoute()
 const router = useRouter()
@@ -20,6 +22,7 @@ const showNav = computed(() => ['/', '/foods', '/qrcodes', '/settings'].includes
 const showAddForm = ref(false)
 const showUpdateModal = ref(false)
 const updateInfo = ref(null)
+const showAgreementModal = ref(false)
 provide('showAddForm', showAddForm)
 provide('auth', { user, isAuthenticated })
 
@@ -38,6 +41,20 @@ function checkVersionUpdate() {
 function closeUpdateModal() {
   showUpdateModal.value = false
   localStorage.setItem(UPDATE_KEY, __APP_VERSION__)
+  checkAgreementUpdate()
+}
+
+function checkAgreementUpdate() {
+  const lastSeen = localStorage.getItem(AGREEMENT_KEY)
+  if (lastSeen !== AGREEMENT_VERSION) {
+    showAgreementModal.value = true
+    logger.info('app', '检测到协议更新', { version: AGREEMENT_VERSION, lastSeen: lastSeen || '(首次)' })
+  }
+}
+
+function closeAgreementModal() {
+  showAgreementModal.value = false
+  localStorage.setItem(AGREEMENT_KEY, AGREEMENT_VERSION)
 }
 
 function handleAdd() {
@@ -59,6 +76,8 @@ let removeRouteGuards = null
 onMounted(() => {
   logger.info('app', 'App 初始化', { route: route.path, isAuthenticated: isAuthenticated.value, isDev: import.meta.env.DEV })
   checkVersionUpdate()
+  // 协议更新检查在 closeUpdateModal 中触发；如果无版本更新则直接检查
+  if (!showUpdateModal.value) checkAgreementUpdate()
 
   removeRouteGuards = (() => {
     const r1 = router.beforeEach(() => {
@@ -142,6 +161,35 @@ watch(() => route.path, (to, from) => {
             <button @click="closeUpdateModal"
               class="w-full py-2.5 rounded-xl bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium transition active:scale-[0.98]">
               知道了
+            </button>
+          </div>
+        </div>
+      </div>
+    </teleport>
+
+    <!-- 协议更新提醒 -->
+    <teleport to="body">
+      <div v-if="showAgreementModal" class="fixed inset-0 z-[121] flex items-center justify-center p-4"
+        @click.self="closeAgreementModal">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+        <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-sm m-4">
+          <div class="p-5 text-center">
+            <div class="text-2xl mb-2">📋</div>
+            <h2 class="text-lg font-semibold font-brand text-gray-800">协议与政策更新</h2>
+            <p class="text-sm text-gray-400 mt-1">我们更新了用户协议和隐私政策</p>
+          </div>
+          <div class="px-5 pb-2 text-sm text-gray-500 leading-relaxed">
+            <ul class="space-y-2 list-disc pl-4 text-xs">
+              <li><strong>食品软删除</strong>：删除或消费食品后，数据仍保留以确保已印出的二维码持续有效</li>
+              <li><strong>时区统一</strong>：所有日期计算统一使用 UTC+8（中国标准时间）</li>
+              <li><strong>隐私政策</strong>：补充了消费时间戳的数据收集说明</li>
+            </ul>
+            <p class="text-xs text-gray-400 mt-3">继续使用 Datelife 即表示您同意更新后的协议。<br>可前往「设置 → 关于」查看完整的用户协议与隐私政策。</p>
+          </div>
+          <div class="p-4">
+            <button @click="closeAgreementModal"
+              class="w-full py-2.5 rounded-xl bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium transition active:scale-[0.98]">
+              我知道了
             </button>
           </div>
         </div>

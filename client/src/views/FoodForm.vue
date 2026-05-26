@@ -185,8 +185,14 @@ async function handleScanResult(result) {
         ? await foods.getById(idMatch[1])
         : await foods.getByUuid(uuidMatch[1])
       form.value.name = food.name
-      scanStatus.value = ''
-      logger.info('foods', '扫码查询食品成功', { type: idMatch ? 'qrcode-id' : 'qrcode-uuid', identifier: idMatch ? idMatch[1] : uuidMatch[1], name: food.name })
+      if (food.consumed_at) {
+        if (food.shelf_life_days) form.value.shelf_life_days = food.shelf_life_days
+        scanStatus.value = '该食品已从列表中移除，已自动填入信息'
+        logger.info('foods', '扫码识别已删除食品', { type: idMatch ? 'qrcode-id' : 'qrcode-uuid', identifier: idMatch ? idMatch[1] : uuidMatch[1], name: food.name })
+      } else {
+        scanStatus.value = ''
+        logger.info('foods', '扫码查询食品成功', { type: idMatch ? 'qrcode-id' : 'qrcode-uuid', identifier: idMatch ? idMatch[1] : uuidMatch[1], name: food.name })
+      }
     } catch (e) {
       const identifier = idMatch ? idMatch[1] : uuidMatch?.[1]
       logger.error('foods', '扫码查询食品失败', { type: idMatch ? 'qrcode-id' : 'qrcode-uuid', identifier, error: e.message })

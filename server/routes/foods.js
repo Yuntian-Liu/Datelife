@@ -12,17 +12,23 @@ function calcExpireDate(produceDate, shelfLifeDays) {
 }
 
 function getStatus(expireDate) {
+  // 统一使用 UTC+8 计算"今天"
   const now = new Date()
-  now.setHours(0, 0, 0, 0)
+  const utc8 = new Date(now.getTime() + 8 * 60 * 60 * 1000)
+  const today = new Date(Date.UTC(utc8.getUTCFullYear(), utc8.getUTCMonth(), utc8.getUTCDate()))
+
   const expire = new Date(expireDate)
   expire.setHours(0, 0, 0, 0)
-  const daysLeft = Math.ceil((expire - now) / (1000 * 60 * 60 * 24))
+  const daysLeft = Math.ceil((expire - today) / (1000 * 60 * 60 * 24))
   if (daysLeft < 0) return { status: 'expired', daysLeft }
   if (daysLeft <= 14) return { status: 'expiring', daysLeft }
   return { status: 'normal', daysLeft }
 }
 
 function attachStatus(food) {
+  if (food.consumed_at) {
+    return { ...food, status: 'consumed', days_left: 0 }
+  }
   const { status, daysLeft } = getStatus(food.expire_date)
   return { ...food, status, days_left: daysLeft }
 }
@@ -53,7 +59,7 @@ router.get('/', (req, res) => {
   let foods
 
   if (req.user) {
-    foods = db.prepare('SELECT * FROM foods WHERE user_id = ? ORDER BY created_at DESC').all(req.user.uid)
+    foods = db.prepare('SELECT * FROM foods WHERE user_id = ? AND consumed_at IS NULL ORDER BY created_at DESC').all(req.user.uid)
   } else {
     foods = []
   }
@@ -136,6 +142,7 @@ router.put('/:id', authRequired, (req, res) => {
   const db = getDb()
   const existing = db.prepare('SELECT * FROM foods WHERE id = ?').get(req.params.id)
   if (!existing) return res.status(404).json({ error: '食品不存在' })
+  if (existing.consumed_at) return res.status(400).json({ error: '该食品已被消费，无法编辑' })
   if (existing.user_id !== req.user.uid) return res.status(403).json({ error: '无权操作此食品' })
 
   const name = req.body.name ?? existing.name
@@ -168,7 +175,8 @@ router.post('/:id/consume', authRequired, (req, res) => {
 
   const qty = existing.quantity ?? 1
   if (qty <= 1) {
-    db.prepare('DELETE FROM foods WHERE id = ?').run(req.params.id)
+    db.prepare("UPDATE foods SET quantity = 0, consumed_at = datetime('now','localtime'), updated_at = datetime('now','localtime') WHERE id = ?")
+      .run(req.params.id)
     return res.json({ deleted: true })
   }
 
@@ -184,7 +192,7 @@ router.delete('/:id', authRequired, (req, res) => {
   if (!existing) return res.status(404).json({ error: '食品不存在' })
   if (existing.user_id !== req.user.uid) return res.status(403).json({ error: '无权操作此食品' })
 
-  const result = db.prepare('DELETE FROM foods WHERE id = ?').run(req.params.id)
+  const result = db.prepare("UPDATE foods SET consumed_at = datetime('now','localtime'), updated_at = datetime('now','localtime'), quantity = 0 WHERE id = ?").run(req.params.id)
   if (result.changes === 0) return res.status(404).json({ error: '食品不存在' })
   res.json({ success: true })
 })

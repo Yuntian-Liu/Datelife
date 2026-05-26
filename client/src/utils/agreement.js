@@ -11,6 +11,7 @@ export const USER_AGREEMENT_HTML = `
     <li>标签管理（自定义标签全局持久存储、按标签筛选和批量管理，最多支持 8 个标签）</li>
     <li>邀请码注册（INVITE_MODE 模式下新用户需凭邀请码完成注册，包含内测协议确认）</li>
     <li>数据的导入与导出备份</li>
+    <li>食品数据采用软删除机制，删除或消费后数据仍保留，已印出的二维码持续有效</li>
   </ul>
 
   <h3 class="text-base font-semibold text-gray-800">二、用户账号</h3>
@@ -42,6 +43,8 @@ export const USER_AGREEMENT_HTML = `
 
   <p><strong>标签持久存储</strong>：您添加的自定义标签独立存储于系统中，即使从所有食品中移除该标签，标签名称仍会保留，直到您在「标签管理」页面主动执行全局删除。全局删除将同时从标签列表和所有关联食品中移除该标签（系统最多支持 8 个标签）。用户应对自己的数据管理操作负责。</p>
 
+  <p><strong>食品软删除</strong>：删除或消费食品后，该食品记录不会从数据库中物理移除，而是标记为已消费状态。这是为了确保已印出的二维码持续有效——扫码仍可查看食品的基本信息。已消费的食品不会出现在您的食品列表中。</p>
+
   <h3 class="text-base font-semibold text-gray-800">六、服务可用性</h3>
   <p>我们将尽最大努力保证服务的稳定运行，但不对因不可抗力（包括但不限于：服务器故障、网络中断、第三方服务异常）导致的服务中断承担责任。服务可能会在不预先通知的情况下进行维护升级。</p>
 
@@ -57,9 +60,9 @@ export const USER_AGREEMENT_HTML = `
   <p>我们有权在必要时修改本协议内容。修改后的协议将在应用内公示，您继续使用 Datelife 即视为同意修改后的协议。</p>
 
   <h3 class="text-base font-semibold text-gray-800">九、适用法律</h3>
-  <p>本协议的解释、效力及纠纷解决均适用中华人民共和国法律。</p>
+  <p>本协议的解释、效力及纠纷解决均适用中华人民共和国法律。系统中所有日期和时间的计算均以 UTC+8（中国标准时间）为基准。</p>
 </div>
-<p class="text-xs text-gray-400 mt-4 pt-3 border-t border-gray-200">最后更新：2026 年 5 月 21 日</p>
+<p class="text-xs text-gray-400 mt-4 pt-3 border-t border-gray-200">最后更新：2026 年 5 月 26 日</p>
 `
 
 export const PRIVACY_POLICY_HTML = `
@@ -68,7 +71,7 @@ export const PRIVACY_POLICY_HTML = `
   <p>为了提供 Datelife 服务，我们会收集以下信息：</p>
   <ul class="list-disc pl-5 space-y-1">
     <li><strong>账号信息</strong>：邮箱地址、昵称、头像种子</li>
-    <li><strong>业务数据</strong>：您录入的食品名称、生产日期、保质期、条形码、自定义标签等数据</li>
+    <li><strong>业务数据</strong>：您录入的食品名称、生产日期、保质期、条形码、自定义标签等数据。删除或消费食品后，记录仍保留（含消费时间戳）以确保二维码持续可用</li>
     <li><strong>设备权限</strong>：扫码功能需要临时调用摄像头。摄像头仅在扫码期间使用，<strong>不会存储、录制或传输任何图像数据</strong></li>
   </ul>
   <p><strong>我们不会收集</strong>：真实姓名、身份证号、手机号码、位置信息等敏感个人信息。</p>
@@ -133,7 +136,8 @@ export const PRIVACY_POLICY_HTML = `
   <h3 class="text-base font-semibold text-gray-800">八、数据保留与删除</h3>
   <ul class="list-disc pl-5 space-y-1">
     <li>在您账号存续期间，我们将保留您的数据</li>
-    <li>如您发起删除请求，我们将在 7 个工作日内完成删除</li>
+    <li>删除或消费的食品记录会保留软删除标记，以确保已印出的二维码持续有效</li>
+    <li>如您发起删除全部数据的请求，我们将在 7 个工作日内完成彻底删除</li>
     <li>如计划停止运营，我们将至少提前 30 天通知用户进行数据备份</li>
   </ul>
 
@@ -143,5 +147,5 @@ export const PRIVACY_POLICY_HTML = `
   <h3 class="text-base font-semibold text-gray-800">十、政策更新</h3>
   <p>当本隐私政策发生重大变更时，我们将在应用内显著位置发布更新通知。建议您定期查阅本政策以了解最新信息。</p>
 </div>
-<p class="text-xs text-gray-400 mt-4 pt-3 border-t border-gray-200">最后更新：2026 年 5 月 21 日</p>
+<p class="text-xs text-gray-400 mt-4 pt-3 border-t border-gray-200">最后更新：2026 年 5 月 26 日</p>
 `
